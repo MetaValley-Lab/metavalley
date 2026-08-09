@@ -5,13 +5,12 @@ os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_KEY", "dummy-key")
 os.environ.setdefault("IS_PRODUCTION", "false")
 
-from fastapi.testclient import TestClient
 
 from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
 from app.main import app
 
 
-def test_auth_routes_are_registered():
+def test_auth_routes_are_registered(client):
     schema = app.openapi()
     paths = schema.get("paths", {}).keys()
 
@@ -19,15 +18,14 @@ def test_auth_routes_are_registered():
     assert "/auth/register" in paths
 
 
-def test_health_endpoint_is_available():
-    client = TestClient(app)
+def test_health_endpoint_is_available(client):
     response = client.get("/health")
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
 
-def test_login_endpoint_success_sets_cookies_and_returns_user(monkeypatch):
+def test_login_endpoint_success_sets_cookies_and_returns_user(client, monkeypatch):
     async def fake_authenticate_user(user):
         session = SimpleNamespace(
             access_token="test-access-token",
@@ -41,7 +39,7 @@ def test_login_endpoint_success_sets_cookies_and_returns_user(monkeypatch):
 
     monkeypatch.setattr("app.api.auth.auth_service.authenticate_user", fake_authenticate_user)
 
-    client = TestClient(app)
+   
     response = client.post(
         "/auth/login",
         json={
@@ -60,13 +58,13 @@ def test_login_endpoint_success_sets_cookies_and_returns_user(monkeypatch):
     assert "refrest_token=test-refresh-token" in set_cookie_value
 
 
-def test_login_endpoint_invalid_credentials_returns_401(monkeypatch):
+def test_login_endpoint_invalid_credentials_returns_401(client, monkeypatch):
     async def fake_authenticate_user(user):
         raise InvalidCredentialsException("E-mail ou senha inválidos")
 
     monkeypatch.setattr("app.api.auth.auth_service.authenticate_user", fake_authenticate_user)
 
-    client = TestClient(app)
+    
     response = client.post(
         "/auth/login",
         json={
@@ -79,7 +77,7 @@ def test_login_endpoint_invalid_credentials_returns_401(monkeypatch):
     assert response.json()["detail"] == "E-mail ou senha inválidos"
 
 
-def test_register_endpoint_success_creates_account_without_db(monkeypatch):
+def test_register_endpoint_success_creates_account_without_db(client, monkeypatch):
     async def fake_register_user(user):
         return {
             "message": "Usuário criado com sucesso.",
@@ -91,7 +89,8 @@ def test_register_endpoint_success_creates_account_without_db(monkeypatch):
 
     monkeypatch.setattr("app.api.auth.auth_service.register_user", fake_register_user)
 
-    client = TestClient(app)
+    
+    
     response = client.post(
         "/auth/register",
         json={
@@ -107,13 +106,12 @@ def test_register_endpoint_success_creates_account_without_db(monkeypatch):
     assert response.json()["user"]["email"] == "alice@example.com"
 
 
-def test_register_endpoint_business_error_returns_400(monkeypatch):
+def test_register_endpoint_business_error_returns_400(client, monkeypatch):
     async def fake_register_user(user):
         raise UserRegistrationException("Falha ao cadastrar usuário: E-mail já existente")
 
     monkeypatch.setattr("app.api.auth.auth_service.register_user", fake_register_user)
 
-    client = TestClient(app)
     response = client.post(
         "/auth/register",
         json={
