@@ -1,12 +1,10 @@
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, status, Depends
 
 from app.core.config import settings
-
 from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
-
 from app.schemas.auth_schema import UserLogin, UserRegister
-
 from app.services.auth_service import AuthService
+from app.api.dependencies import get_current_user
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -81,3 +79,9 @@ async def register(user: UserRegister):
             detail="Erro inesperado no servidor."
         )
         
+
+@router.get("/me")
+async def get_me(
+    current_user=Depends(get_current_user),
+):
+    return current_user
