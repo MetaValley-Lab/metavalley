@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Response, status
 
-from core.config import settings
+from app.core.config import settings
 
-from core.exceptions import InvalidCredentialsException, UserRegistrationException
+from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
 
-from schemas.auth_schema import UserLogin, UserRegister
+from app.schemas.auth_schema import UserLogin, UserRegister
 
-from services.auth_service import AuthService
+from app.services.auth_service import AuthService
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -19,7 +19,7 @@ auth_service = AuthService()
 )
 async def login(user: UserLogin, response: Response):
     try:
-        session, auth_user = await auth_service.autenticate_user(user)
+        session, auth_user = await auth_service.authenticate_user(user)
         
         access_token = session.access_token
         refresh_token = session.refresh_token

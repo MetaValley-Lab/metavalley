@@ -1,12 +1,12 @@
-from schemas.auth_schema import UserLogin, UserRegister
-from core.supabase import supabase
-from core.exceptions import InvalidCredentialsException, AuthException, UserRegistrationException
+from app.schemas.auth_schema import UserLogin, UserRegister
+from app.core.supabase import supabase
+from app.core.exceptions import InvalidCredentialsException, AuthException, UserRegistrationException
 
 from supabase_auth.errors import AuthApiError
 
 class AuthService:
     
-    async def autenticate_user(self, user: UserLogin):
+    async def authenticate_user(self, user: UserLogin):
         try:
             auth_response = supabase.auth.sign_in_with_password({
                 "email": user.email,
