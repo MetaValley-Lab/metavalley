@@ -1,10 +1,8 @@
-from gotrue.errors import AuthApiError
-
 from schemas.auth_schema import UserLogin, UserRegister
 from core.supabase import supabase
 from core.exceptions import InvalidCredentialsException, AuthException, UserRegistrationException
 
-
+from supabase_auth.errors import AuthApiError
 
 class AuthService:
     
@@ -26,7 +24,7 @@ class AuthService:
             raise InvalidCredentialsException("E-mail ou senha inválidos")
         except Exception as e:
             if isinstance(e, InvalidCredentialsException):
-                raise
+                raise e 
             raise InvalidCredentialsException("Erro no processo de autenticação.")
             
     
@@ -58,7 +56,5 @@ class AuthService:
             raise UserRegistrationException(f"Falha ao cadastrar usuário: {e.message}")
         except Exception as e:
             if isinstance(e, UserRegistrationException):
-                raise
-            raise UserRegistrationException("Ocorreu um erro interno ao criar um usuário.")
-        
-        
+                raise e
+            raise UserRegistrationException("Erro interno no processo de autenticação.")
