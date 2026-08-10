@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Response, status, Depends
+from supabase_auth import User
 
 from app.core.config import settings
 from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
-from app.schemas.auth_schema import UserLogin, UserRegister
+from app.schemas.auth_schema import UserLogin, UserRegister, ChangePasswordSchema, ForgotPassword, ResetPasswordRequest
 from app.services.auth_service import AuthService
 from app.api.dependencies import get_current_user
 
@@ -33,7 +34,7 @@ async def login(user: UserLogin, response: Response):
         )
         
         response.set_cookie(
-            key="refrest_token",
+            key="refresh_token",
             value=refresh_token,
             httponly=True,
             secure=settings.IS_PRODUCTION,
@@ -85,3 +86,47 @@ async def get_me(
     current_user=Depends(get_current_user),
 ):
     return current_user
+
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+    summary="Solicitar e-mail de recuperação de senha"
+)
+async def forgot_password(payload: ForgotPassword):
+    return await auth_service.request_password_reset(email=payload.email)
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Redefinir senha usando o código recebido por e-mail"
+)
+async def reset_password(payload: ResetPasswordRequest):
+    try:
+        return await auth_service.reset_password(
+            code=payload.code,
+            new_password=payload.new_password
+        )
+    except InvalidCredentialsException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password(
+    payload: ChangePasswordSchema,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await auth_service.change_password(
+            email=str(current_user.email),
+            current_password=payload.current_password,
+            new_password=payload.new_password
+        )
+    except InvalidCredentialsException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    

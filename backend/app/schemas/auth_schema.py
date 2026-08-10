@@ -39,3 +39,26 @@ class UserRegister(BaseModel):
             
         except NumberParseException:
             raise ValueError("Formato de número de telefone inválido.")
+        
+
+class ForgotPassword(BaseModel):
+    email: str
+    
+
+class ResetPasswordRequest(BaseModel):
+    code: str 
+    new_password: str = Field(
+        min_length=8,
+        description="A senha deve ter no mínimo 8 caracteres" 
+    )
+
+
+class ChangePasswordSchema(BaseModel):
+    current_password: str = Field(
+        min_length=8,
+        description="A senha deve no mínimo ter 8 caracteres."
+    )
+    new_password: str = Field(
+        min_length=8,
+        description="A senha deve no mínimo ter 8 caracteres."
+    )
