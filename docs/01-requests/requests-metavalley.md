@@ -120,9 +120,12 @@ O segundo diferencial é o **dataset acumulado**: cada founder que usa a platafo
   "name": "string",
   "description": "string",
   "problem": "string",
+  "solution": "string",
   "segment": "string",
+  "target_location": "string (opcional)",
   "stage": "idea | mvp | launched",
-  "revenue_model": "string"
+  "primary_revenue_model": "subscription | saas | marketplace | freemium | pay_per_use | licensing | advertising | e_commerce | service | hardware | other",
+  "revenue_model_details": "string (opcional — para modelos híbridos ou nuances)"
 }
 ```
 
@@ -370,8 +373,22 @@ users
   id, email, password_hash, created_at, plan (free | pro)
 
 startups
-  id, user_id, name, description, problem, segment,
-  stage (idea | mvp | launched), revenue_model, created_at
+  id                    UUID PK DEFAULT gen_random_uuid()
+  user_id               UUID FK → auth.users (ON DELETE CASCADE)
+  name                  VARCHAR(255) NOT NULL
+  description           TEXT
+  problem               TEXT
+  solution              TEXT
+  segment               VARCHAR(255)
+  target_location       VARCHAR(255)
+  stage                 ENUM (idea | mvp | launched) DEFAULT idea
+  primary_revenue_model ENUM (subscription | saas | marketplace | freemium |
+                              pay_per_use | licensing | advertising |
+                              e_commerce | service | hardware | other)
+  revenue_model_details TEXT
+  status                ENUM (active | archived) DEFAULT active
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+  updated_at            TIMESTAMPTZ DEFAULT NOW() [auto via trigger]
 
 products
   id, startup_id, name, description, type, price, stage, created_at
