@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, status, Depends
+from fastapi import APIRouter, HTTPException, Response, status, Depends, Request
 from supabase_auth import User
 
 from app.core.config import settings
@@ -6,6 +6,7 @@ from app.core.exceptions import InvalidCredentialsException, UserRegistrationExc
 from app.schemas.auth_schema import UserLogin, UserRegister, ChangePasswordSchema, ForgotPassword, ResetPasswordRequest
 from app.services.auth_service import AuthService
 from app.api.dependencies import get_current_user
+from app.core.limiter import limiter
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -16,7 +17,8 @@ auth_service = AuthService()
     "/login", 
     summary="Realiza login e define cookie de sessão"
 )
-async def login(user: UserLogin, response: Response):
+@limiter.limit("5/minute")
+async def login(request: Request, user: UserLogin, response: Response):
     try:
         session, auth_user = await auth_service.authenticate_user(user)
         

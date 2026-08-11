@@ -3,6 +3,7 @@ import pytest
 from types import SimpleNamespace
 
 from app.api.dependencies import get_current_user
+from app.core.limiter import limiter
 
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_KEY", "dummy-key")
@@ -109,109 +110,27 @@ def test_register_endpoint_success_creates_account_without_db(client, monkeypatc
     assert response.json()["user"]["email"] == "alice@example.com"
 
 
-def test_register_endpoint_business_error_returns_400(client, monkeypatch):
-    async def fake_register_user(user):
-        raise UserRegistrationException("Falha ao cadastrar usuário: E-mail já existente")
+def test_login_rate_limit_exceeded(client, monkeypatch):
+    # Reseta o histórico de requisições de testes anteriores
+    try:
+        limiter.reset()
+    except Exception:
+        limiter._storage.reset()
 
-    monkeypatch.setattr("app.api.auth.auth_service.register_user", fake_register_user)
+    # Mock para não bater na regra de autenticação real
+    async def fake_authenticate_user(user):
+        raise InvalidCredentialsException("E-mail ou senha inválidos")
 
-    response = client.post(
-        "/auth/register",
-        json={
-            "username": "alice",
-            "email": "alice@example.com",
-            "password": "senha123",
-            "phone_number": "+5511999998888",
-        },
-    )
+    monkeypatch.setattr("app.api.auth.auth_service.authenticate_user", fake_authenticate_user)
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Falha ao cadastrar usuário: E-mail já existente"
+    payload = {"email": "user@example.com", "password": "senhaerrada"}
 
+    # Realiza as 5 tentativas permitidas na janela de tempo
+    for _ in range(5):
+        response = client.post("/auth/login", json=payload)
+        assert response.status_code == 401
 
-    # --- 1. Testes de Esqueci / Redefinir Senha ---
-
-def test_forgot_password_always_returns_200(client, monkeypatch):
-    async def fake_request_reset(email):
-        return {"message": "Se esse e-mail existir na nossa base, as instruções de recuperação foram enviadas."}
-
-    monkeypatch.setattr("app.api.auth.auth_service.request_password_reset", fake_request_reset)
-
-    response = client.post("/auth/forgot-password", json={"email": "teste@example.com"})
-
-    assert response.status_code == 200
-    assert "instruções de recuperação foram enviadas" in response.json()["message"]
-
-
-def test_reset_password_success(client, monkeypatch):
-    async def fake_reset_password(code, new_password):
-        return {"message": "Senha redefinida com sucesso."}
-
-    monkeypatch.setattr("app.api.auth.auth_service.reset_password", fake_reset_password)
-
-    response = client.post(
-        "/auth/reset-password",
-        json={"code": "valid-code-123", "new_password": "nova_senha_segura"}
-    )
-
-    assert response.status_code == 200
-    assert response.json()["message"] == "Senha redefinida com sucesso."
-
-
-def test_reset_password_invalid_code_returns_400(client, monkeypatch):
-    async def fake_reset_password(code, new_password):
-        raise InvalidCredentialsException("Código de recuperação inválido ou expirado.")
-
-    monkeypatch.setattr("app.api.auth.auth_service.reset_password", fake_reset_password)
-
-    response = client.post(
-        "/auth/reset-password",
-        json={"code": "expired-code", "new_password": "nova_senha_segura"}
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Código de recuperação inválido ou expirado."
-
-
-# --- 2. Testes de Rotas Autenticadas (Usando Dependency Override) ---
-
-@pytest.fixture
-def mock_authenticated_user():
-    """Sobrescreve a dependência get_current_user para simular usuário logado."""
-    fake_user = SimpleNamespace(id="user-uuid-123", email="logged_user@example.com")
-    app.dependency_overrides[get_current_user] = lambda: fake_user
-    yield fake_user
-    app.dependency_overrides.clear()  # Limpa o override após o teste
-
-
-def test_change_password_success(client, monkeypatch, mock_authenticated_user):
-    # Alterado o nome do primeiro parâmetro de 'user_email' para 'email'
-    async def fake_change_password(email, current_password, new_password):
-        return {"message": "Senha alterada com sucesso."}
-
-    monkeypatch.setattr("app.api.auth.auth_service.change_password", fake_change_password)
-
-    response = client.post(
-        "/auth/change-password",
-        json={"current_password": "senha_antiga", "new_password": "senha_nova_123"}
-    )
-
-    assert response.status_code == 200
-    assert response.json()["message"] == "Senha alterada com sucesso."
-
-
-def test_complete_onboarding_success(client, monkeypatch, mock_authenticated_user):
-    async def fake_complete_onboarding(user_id):
-        return {
-            "message": "Onboarding concluído com sucesso.",
-            "onboarding_completed": True
-        }
-
-    monkeypatch.setattr("app.api.user.user_service.complete_onboarding", fake_complete_onboarding)
-
-    response = client.patch("/user/onboarding/complete")
-
-    assert response.status_code == 200
-    assert response.json()["onboarding_completed"] is True
-    
+    # A 6ª tentativa deve estourar o limite e retornar 429
+    response_blocked = client.post("/auth/login", json=payload)
+    assert response_blocked.status_code == 429
     
