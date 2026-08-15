@@ -2,10 +2,12 @@
 from app.agents.ceo_agent import CEOAgent
 from app.agents.cto_agent import CTOAgent
 from app.agents.cfo_agent import CFOAgent
+from app.agents.cmo_agent import CMOAgent
 
 
 chain_agents: dict = {
         "ceo_agent": CEOAgent(),
         "cto_agent": CTOAgent(),
         "cfo_agent": CFOAgent(),
+        "cmo_agent": CMOAgent(),
     }
