@@ -6,6 +6,8 @@ from slowapi import _rate_limit_exceeded_handler
 from app.api.auth import router as auth_router
 from app.api.user import router as user_router
 from app.api.startup import router as startup_router
+from app.api.planning_item import router as planning_item
+
 
 from app.core.limiter import limiter
 
@@ -34,6 +36,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(startup_router)
+app.include_router(planning_item)
 
 
 @app.get("/health", tags=["Sistema"])
