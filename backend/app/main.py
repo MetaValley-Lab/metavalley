@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
@@ -6,6 +6,7 @@ from slowapi import _rate_limit_exceeded_handler
 from app.api.auth import router as auth_router
 from app.api.user import router as user_router
 from app.api.startup import router as startup_router
+from app.api.chat import router as agents_router
 from app.api.planning_item import router as planning_item_router
 from app.api.canvas_zone import router as canvas_zone_router
 from app.api.product import router as product_router
@@ -38,6 +39,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(startup_router)
+app.include_router(agents_router)
 app.include_router(planning_item_router)
 app.include_router(canvas_zone_router)
 app.include_router(product_router)
