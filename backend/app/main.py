@@ -7,6 +7,10 @@ from app.api.auth import router as auth_router
 from app.api.user import router as user_router
 from app.api.startup import router as startup_router
 from app.api.chat import router as agents_router
+from app.api.planning_item import router as planning_item_router
+from app.api.canvas_zone import router as canvas_zone_router
+from app.api.product import router as product_router
+
 
 from app.core.limiter import limiter
 
@@ -36,6 +40,10 @@ app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(startup_router)
 app.include_router(agents_router)
+app.include_router(planning_item_router)
+app.include_router(canvas_zone_router)
+app.include_router(product_router)
+
 
 @app.get("/health", tags=["Sistema"])
 async def health_check():
