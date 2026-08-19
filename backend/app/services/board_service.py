@@ -9,10 +9,10 @@ from app.services.startup_service import StartupService
 from app.services.canvas_zone_service import CanvasZoneService
 from app.services.planning_item_service import PlanningItemService
 from app.services.product_service import ProductService
-from backend.app.services.action_service import ActionService
-from backend.app.services.conversation_service import ConversationService
-from backend.app.services.rag_service import RAGService
-from backend.app.services.user_service import UserService
+from app.services.action_service import ActionService
+from app.services.conversation_service import ConversationService
+from app.services.rag_service import RAGService
+from app.services.user_service import UserService
  
 
 

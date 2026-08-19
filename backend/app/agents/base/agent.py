@@ -17,9 +17,7 @@ from app.agents.base.context import AgentContext, AgentMessage
 BASE_ACTION_INSTRUCTIONS = """
 ## FORMATO DE RESPOSTA OBRIGATÓRIO
 
-Toda resposta deve seguir exatamente este formato:
-
-[Sua mensagem natural aqui — nunca mencione os blocos técnicos abaixo]
+Toda resposta DEVE seguir exatamente esta estrutura (tags técnicas no início, texto livre depois):
 
 <ACTIONS>
 [array JSON de actions, ou [] se nenhuma ação necessária]
@@ -28,6 +26,8 @@ Toda resposta deve seguir exatamente este formato:
 <OPTIONS>
 [array JSON de strings para botões de escolha rápida, ou [] se nenhuma]
 </OPTIONS>
+
+[Sua mensagem natural para o usuário aqui]
 
 ---
 
@@ -162,10 +162,11 @@ Como você deve preencher o campo "last_updated_by":
 
 ## REGRAS DE ACTIONS
 1. Múltiplas actions são permitidas na lista
-2. Nunca exponha os blocos <ACTIONS> ou <OPTIONS> na sua fala
-3. Emita update_canvas_zone quando identificar informação relevante para o canvas
-4. Emita add_planning_item quando sugerir uma próxima ação concreta ao founder
-5. OPTIONS: use apenas quando a resposta esperada for de um conjunto limitado
+2. Na sua mensagem em linguagem natural, fale normalmente com o usuário. NÃO mencione termos técnicos como "tags <ACTIONS>", "executando JSON" ou "disparando ação". Apenas responda naturalmente.
+3. As tags <ACTIONS> e <OPTIONS> DEVEM SEMPRE ser impressas ao final da resposta, mesmo que o conteúdo interno seja um array vazio [].
+4. Emita update_canvas_zone quando identificar informação relevante para o canvas.
+5. Emita add_planning_item quando sugerir uma próxima ação concreta ao founder
+6. OPTIONS: use apenas quando a resposta esperada for de um conjunto limitado
 
 ---
 
@@ -174,6 +175,31 @@ Como você deve preencher o campo "last_updated_by":
 - Quando discordar, diga explicitamente: "Discordo do [nome] porque..."
 - Quando concordar e complementar: "Complementando o que o [nome] disse..."
 - Não repita o que outros já disseram — adicione sua perspectiva única
+
+---
+
+## EXEMPLO DE COMPORTAMENTO ESPERADO
+
+Entrada do usuário: "Atualize o canvas colocando essa proposta de valor: Criar desenvolvedores de elite"
+
+Sua resposta exata:
+Com certeza! Atualizei a proposta de valor no Canvas Vivo. Essa mudança nos posiciona em um nível premium no mercado. Quem é nosso cliente inicial?
+
+<ACTIONS>
+[
+  {
+    "type": "update_canvas_zone",
+    "zone": "value_proposition",
+    "content": "Criar desenvolvedores de elite",
+    "status": "filled",
+    "filled_by": "ceo"
+  }
+]
+</ACTIONS>
+
+<OPTIONS>
+[]
+</OPTIONS>
 """
 
 
@@ -190,9 +216,9 @@ class BaseAgent(ABC):
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-3.6-flash",
             temperature=0.7,
-            max_output_tokens=600,   # Controle de custo: máx 600 tokens por resposta
+            max_output_tokens=2048,   # Controle de custo: máx 600 tokens por resposta
         )
 
     @abstractmethod
@@ -208,10 +234,21 @@ class BaseAgent(ABC):
         messages = self._build_messages(message, context)
         raw_response = await self.llm.ainvoke(messages)
         
+        
+        print(raw_response.content)
+        
         content = raw_response.content
         if isinstance(content, list):
-            raise TypeError(f"Erro, a LLM retornou uma lista inesperada: {content}")
-        
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict) and "text" in item:
+                    text_parts.append(item["text"])
+                elif isinstance(item, str):
+                    text_parts.append(item)
+                elif hasattr(item, "text"):
+                    text_parts.append(getattr(item, "text", ""))
+            content = "".join(text_parts)
+                
         return self._parse_response(content) 
 
     def _build_messages(self, message: str, context: AgentContext) -> list:
