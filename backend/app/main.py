@@ -10,6 +10,7 @@ from app.api.chat import router as agents_router
 from app.api.planning_item import router as planning_item_router
 from app.api.canvas_zone import router as canvas_zone_router
 from app.api.product import router as product_router
+from app.api.simulation_interest import router as simulation_interest_router
 
 
 from app.core.limiter import limiter
@@ -43,6 +44,7 @@ app.include_router(agents_router)
 app.include_router(planning_item_router)
 app.include_router(canvas_zone_router)
 app.include_router(product_router)
+app.include_router(simulation_interest_router)
 
 
 @app.get("/health", tags=["Sistema"])
