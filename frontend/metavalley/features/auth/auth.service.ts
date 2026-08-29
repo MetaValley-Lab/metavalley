@@ -5,7 +5,7 @@ import { RegisterRequest } from "./auth.schema";
 export async function login(
   data: LoginRequest,
 ): Promise<LoginResponse> {
-  return apiClient<LoginResponse>("/auth/login", {
+  return apiClient<LoginResponse>("auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -15,7 +15,7 @@ export async function login(
 export async function register(
   data: RegisterRequest,
 ): Promise<RegisterResponse> {
-  return apiClient<RegisterResponse>("/auth/register", {
+  return apiClient<RegisterResponse>("auth/register", {
     method: "POST",
     body: JSON.stringify(data),
   });

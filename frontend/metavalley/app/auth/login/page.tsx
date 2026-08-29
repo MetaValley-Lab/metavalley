@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/features/auth/auth.schema";
 import { login } from "@/features/auth/auth.service";
+import { useRouter } from "next/navigation";
 
 
 export default function LoginPage() {
@@ -14,13 +15,21 @@ export default function LoginPage() {
   const {register, handleSubmit, formState: { errors, isSubmitting }} = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema)
   });
+
+  const router = useRouter();
   
 
   async function onSubmit(data: LoginFormData) {
     try {
+
       const response = await login(data);
 
-      console.log("Usuário autenticado:", response)
+      if(!response) {
+        throw new Error("Erro ao fazer login. Tente novamente mais tarde.");
+      }
+
+      router.push("/home");
+      
     } catch (error) {
       console.error("Erro ao login: ", error);
     }
