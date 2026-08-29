@@ -1,13 +1,32 @@
-import type { Metadata } from "next";
+'use client'
+
 import Link from "next/link";
 import TextField from "@/app/components/TextField";
 import Button from "@/app/components/Button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, LoginFormData } from "@/features/auth/auth.schema";
+import { login } from "@/features/auth/auth.service";
 
-export const metadata: Metadata = {
-  title: "Login",
-};
 
 export default function LoginPage() {
+
+  const {register, handleSubmit, formState: { errors, isSubmitting }} = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema)
+  });
+  
+
+  async function onSubmit(data: LoginFormData) {
+    try {
+      const response = await login(data);
+
+      console.log("Usuário autenticado:", response)
+    } catch (error) {
+      console.error("Erro ao login: ", error);
+    }
+  }
+  
+  
   return (
     <div className="flex min-h-screen w-full gap-4 p-6">
       {/* Coluna esquerda: reservada para imagem, oculta em telas pequenas */}
@@ -16,30 +35,53 @@ export default function LoginPage() {
 
       {/* Coluna direita: formulário */}
       <div className="flex w-full flex-1 items-center justify-center">
-        <form className="w-full max-w-sm">
+        <form 
+          className="w-full max-w-sm"
+          onSubmit={handleSubmit(onSubmit)}
+          >
           <h2 className="mb-2 text-center text-4xl font-bold">Seja Bem-vindo</h2>
           <p className="mb-6 text-center text-xs text-gray-400">
             Acesse suas startups e a valide suas ideias
           </p>
 
           <div className="mb-6 flex flex-col gap-4">
-            <TextField
-              id="email"
-              label="E-mail"
-              type="email"
-              autoComplete="email"
-              required
-            />
-            <TextField
-              id="senha"
-              label="Senha"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
+            <div>
+              <TextField
+                id="email"
+                label="E-mail"
+                type="email"
+                autoComplete="email"
+                {...register("email")}
+                required
+              />
+
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+              )}
+
+            </div>
+            <div>
+              <TextField
+                id="password"
+                label="Senha"
+                type="password"
+                autoComplete="current-password"
+                {...register("password")}
+                required
+              />
+
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+              )}
+
+            </div>
           </div>
 
-          <Button label="Fazer login" />
+          <Button 
+            label={isSubmitting ?  "Entrando..." : "Fazer login"} 
+            type="submit"
+            disabled={isSubmitting}
+            />
 
           <p className="mt-4 text-center text-xs text-gray-500">
             Não possui uma conta?{" "}
