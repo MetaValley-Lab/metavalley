@@ -1,0 +1,69 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { getProducts } from "@/features/startups/products/product.service";
+import type { Product } from "@/features/startups/products/product.types";
+import ProductCard from "./ProductCard";
+
+interface ProductsSectionProps {
+  startupId: string;
+}
+
+export default function ProductsSection({ startupId }: ProductsSectionProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadProducts() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProducts(startupId);
+        setProducts(data);
+      } catch {
+        setError("Não foi possível carregar os produtos agora.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, [startupId]);
+
+  function handleCreateProduct() {
+    // TODO: abrir o fluxo de criação de produto quando ele existir — feature separada,
+    // conforme combinado.
+  }
+
+  return (
+    <section>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Seus produtos</h2>
+        <button
+          type="button"
+          onClick={handleCreateProduct}
+          className="flex cursor-pointer items-center gap-1.5 rounded-full bg-[#4735FD] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3c2ce0]"
+        >
+          <Plus size={16} />
+          Criar novo produto
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="h-40 w-full animate-pulse rounded-md bg-gray-100" />
+      ) : error ? (
+        <p className="text-sm text-red-500">{error}</p>
+      ) : products.length === 0 ? (
+        <p className="text-sm text-gray-400">Nenhum produto criado ainda.</p>
+      ) : (
+        <div className="flex flex-wrap gap-4">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+

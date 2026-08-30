@@ -12,3 +12,7 @@
       body: JSON.stringify(data),
     });
   }
+
+  export async function getStartup(startup_id: string): Promise<Startup> {
+    return apiClient<Startup>(`startups/${startup_id}`);
+  }

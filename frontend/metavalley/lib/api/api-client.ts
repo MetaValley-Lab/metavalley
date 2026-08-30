@@ -26,6 +26,8 @@ export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): 
   if(!API_URL) {
     throw new Error("Erro, NEXT_PUBLIC_API não configurada.");
   }
+
+  console.log(API_URL);
   
   const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`; 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
