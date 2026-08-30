@@ -1,7 +1,7 @@
-import ComingSoon from "@/app/components/ComingSoon";
+import ChatLayout from "@/app/components/ChatLayout";
 
 
 export default function StartupChatPage() {
-  return <ComingSoon title="Chat" />;
+  return <ChatLayout />;
 }
 
