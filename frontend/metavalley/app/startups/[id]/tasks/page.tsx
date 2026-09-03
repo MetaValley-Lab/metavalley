@@ -1,6 +1,8 @@
-import ComingSoon from "@/app/components/ComingSoon";
+import PlanningList from "@/app/components/PlanningList";
 
+export default async function StartupTasksPage({ params }: PageProps<"/startups/[id]/tasks">) {
+  const { id } = await params;
 
-export default function StartupTasksPage() {
-  return <ComingSoon title="Lista de Tarefas" />;
+  return <PlanningList startupId={id} />;
 }
+
