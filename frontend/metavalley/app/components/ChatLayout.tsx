@@ -1,25 +1,67 @@
-// Local: features/chat/components/ChatLayout.tsx
-
 "use client";
 
-import { useState } from "react";
-import { chatContacts, initialMessages } from "@/features/startups/chat/chat-data";
+import { useEffect, useState, useRef } from "react";
+import { chatContacts } from "@/features/startups/chat/chat-data";
 import type { ChatMessage } from "@/features/startups/chat/chat.types";
 import ContactsSidebar from "@/app/components/ContactsSidebar";
 import ConversationView from "@/app/components/ConversationView";
+import { getChatHistory, sendMessageStream, type StreamEvent } from "@/features/startups/chat/chat.service";
 
-export default function ChatLayout() {
+interface ChatLayoutProps {
+  startupId: string;
+}
+
+export default function ChatLayout({ startupId }: ChatLayoutProps) {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [messagesByContact, setMessagesByContact] =
-    useState<Record<string, ChatMessage[]>>(initialMessages);
+  const [messagesByContact, setMessagesByContact] = useState<Record<string, ChatMessage[]>>({});
+  
+  // Usamos um Ref para memorizar quais conversas já buscaram o histórico na API
+  const loadedHistories = useRef<Set<string>>(new Set());
 
   const selectedContact = chatContacts.find((c) => c.id === selectedContactId) ?? null;
 
-  function handleSend(content: string) {
+  // 1. CARREGA HISTÓRICO
+  useEffect(() => {
+    if (!selectedContactId || !startupId || startupId === "undefined") return;
+    
+    // Checamos o Ref em vez do state. Isso elimina o aviso do ESLint e evita o loop infinito.
+    if (loadedHistories.current.has(selectedContactId)) return;
+
+    async function fetchHistory() {
+      try {
+        const historyData = await getChatHistory(startupId, selectedContactId!);
+        
+        const formattedMessages: ChatMessage[] = historyData.map((msg) => ({
+          id: msg.id,
+          contactId: selectedContactId!,
+          sender: msg.role === "user" ? "user" : "agent",
+          agentName: msg.agent_name,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+        }));
+
+        setMessagesByContact((prev) => ({
+          ...prev,
+          [selectedContactId!]: formattedMessages
+        }));
+
+        // Marca que esta conversa já foi carregada
+        loadedHistories.current.add(selectedContactId!);
+      } catch (error) {
+        console.error("Erro ao carregar histórico:", error);
+      }
+    }
+
+    fetchHistory();
+    
+  }, [selectedContactId, startupId]); 
+
+  // 2. ENVIA MENSAGEM
+  async function handleSend(content: string) {
     if (!selectedContactId) return;
 
-    const newMessage: ChatMessage = {
-      id: `${selectedContactId}-${Date.now()}`,
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
       contactId: selectedContactId,
       sender: "user",
       content,
@@ -28,15 +70,44 @@ export default function ChatLayout() {
 
     setMessagesByContact((prev) => ({
       ...prev,
-      [selectedContactId]: [...(prev[selectedContactId] ?? []), newMessage],
+      [selectedContactId]: [...(prev[selectedContactId] ?? []), userMessage],
     }));
-    // TODO: enviar a mensagem para o backend/IA quando essa integração existir.
-    // Por enquanto ela só fica no estado local do componente (sem persistência).
+
+    await sendMessageStream(
+      {
+        startupId,
+        message: content,
+        conversationType: selectedContactId,
+      },
+      (event: StreamEvent) => {
+        if (event.event === "agent_message") {
+          const agentMessage: ChatMessage = {
+            id: `agent-${Date.now()}-${Math.random()}`,
+            contactId: selectedContactId,
+            sender: "agent",
+            agentName: event.agent,
+            content: event.content,
+            timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          };
+
+          setMessagesByContact((prev) => ({
+            ...prev,
+            [selectedContactId]: [...(prev[selectedContactId] ?? []), agentMessage],
+          }));
+        }
+      },
+      (errorMessage: string) => {
+        console.error("Erro do agente:", errorMessage);
+      },
+      () => {
+        // stream finalizado
+      }
+    );
   }
 
   function lastMessagePreview(contactId: string): string {
     const contactMessages = messagesByContact[contactId] ?? [];
-    return contactMessages[contactMessages.length - 1]?.content ?? "";
+    return contactMessages[contactMessages.length - 1]?.content ?? "Nenhuma mensagem...";
   }
 
   return (

@@ -2,7 +2,7 @@ import type { ChatContact, ChatMessage } from "./chat.types";
 
 export const chatContacts: ChatContact[] = [
   {
-    id: "board-executivo",
+    id: "group",
     name: "Board Executivo",
     description:
       "Grupo composto por CEO, CTO, CFO e CMO. Eles auxiliarão você a validar suas ideias e produtos.",
@@ -43,7 +43,7 @@ export const initialMessages: Record<string, ChatMessage[]> = Object.fromEntries
       {
         id: `${contact.id}-seed`,
         contactId: contact.id,
-        sender: "contact",
+        sender: "agent",
         content: contact.description,
         timestamp: "09:00",
       },

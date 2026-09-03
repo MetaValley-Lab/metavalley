@@ -1,17 +1,16 @@
-
 export interface ChatContact {
-  id: string;
+  id: string; // "group" | "ceo" | "cto" | "cfo" | "cmo"
   name: string;
   description: string;
   isGroup?: boolean;
-  // Classe Tailwind de fundo do avatar (usada até existir foto real).
   color: string;
 }
 
 export interface ChatMessage {
   id: string;
   contactId: string;
-  sender: "user" | "contact";
+  sender: "user" | "agent"; // Backend usa MessageRole: "user" | "agent"
+  agentName?: string | null; // Adicionado para saber qual agente respondeu no grupo
   content: string;
-  timestamp: string;
+  timestamp: string; 
 }
