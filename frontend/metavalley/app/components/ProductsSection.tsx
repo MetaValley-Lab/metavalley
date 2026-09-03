@@ -1,3 +1,5 @@
+// Local: features/products/components/ProductsSection.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +7,7 @@ import { Plus } from "lucide-react";
 import { getProducts } from "@/features/startups/products/product.service";
 import type { Product } from "@/features/startups/products/product.types";
 import ProductCard from "./ProductCard";
+import CreateProductModal from "./CreateProductModal";
 
 interface ProductsSectionProps {
   startupId: string;
@@ -14,6 +17,8 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function loadProducts() {
@@ -29,12 +34,7 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
       }
     }
     loadProducts();
-  }, [startupId]);
-
-  function handleCreateProduct() {
-    // TODO: abrir o fluxo de criação de produto quando ele existir — feature separada,
-    // conforme combinado.
-  }
+  }, [startupId, refreshKey]);
 
   return (
     <section>
@@ -42,7 +42,7 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
         <h2 className="text-lg font-semibold text-gray-900">Seus produtos</h2>
         <button
           type="button"
-          onClick={handleCreateProduct}
+          onClick={() => setModalOpen(true)}
           className="flex cursor-pointer items-center gap-1.5 rounded-full bg-[#4735FD] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3c2ce0]"
         >
           <Plus size={16} />
@@ -63,6 +63,16 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
           ))}
         </div>
       )}
+
+      <CreateProductModal
+        startupId={startupId}
+        visible={modalOpen}
+        onHide={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false);
+          setRefreshKey((k) => k + 1);
+        }}
+      />
     </section>
   );
 }
