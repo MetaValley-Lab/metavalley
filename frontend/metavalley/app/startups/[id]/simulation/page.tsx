@@ -1,7 +1,7 @@
-import ComingSoon from "@/app/components/ComingSoon";
+import SimulationPromo from "@/app/components/SimulationPromo";
 
+export default async function StartupSimulationPage({ params }: PageProps<"/startups/[id]/simulation">) {
+  const { id } = await params;
 
-export default function StartupSimulationPage() {
-  return <ComingSoon title="Simulação" />;
+  return <SimulationPromo startupId={id} />;
 }
-
