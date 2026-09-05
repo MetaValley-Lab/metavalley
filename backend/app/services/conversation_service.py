@@ -94,3 +94,63 @@ class ConversationService:
 
         messages = response.data or []
         return cast(list[dict[str, Any]], list(reversed(messages)))  # Mais antigas primeiro → contexto correto para o LLM
+
+
+    async def get_messages_by_startup_and_type(
+        self,
+        startup_id: str, 
+        conv_type: str, 
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """
+        Retorna o histórico completo de mensagens de uma conversa específica.
+        Usado pelo endpoint GET /chat/history/{startup_id}/{conversation_type}.
+ 
+        Se a conversa ainda não existe, retorna lista vazia —
+        o frontend interpreta isso como chat sem histórico ainda.
+        
+        """
+        conv_response = (
+            supabase.table("conversations")
+            .select("id")
+            .eq("startup_id", startup_id)
+            .eq("type", conv_type)
+            .limit(1)
+            .execute()
+        )
+ 
+        if not conv_response.data:
+            return []
+ 
+        conversation_id = conv_response.data[0]["id"]
+ 
+        messages_response = (
+            supabase.table("messages")
+            .select("*")
+            .eq("conversation_id", conversation_id)
+            .order("created_at", desc=False)
+            .limit(limit)
+            .execute()
+        )
+ 
+        return cast(List[Dict[str, Any]], messages_response.data or [])
+ 
+    async def get_conversations_by_startup(
+        self,
+        startup_id: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Lista todas as conversas que existem para uma startup.
+        Útil para o frontend saber quais chats já possuem histórico.
+        """
+        response = (
+            supabase.table("conversations")
+            .select("*")
+            .eq("startup_id", startup_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+ 
+        return cast(List[Dict[str, Any]], response.data or [])
+
+    
