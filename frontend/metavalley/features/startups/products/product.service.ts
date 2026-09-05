@@ -12,3 +12,17 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
   });
 }
 
+export async function updateProduct(
+  productId: string,
+  payload: Omit<Partial<CreateProductPayload>, "startup_id">,
+): Promise<Product> {
+  return apiClient<Product>(`/products/${productId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteProduct(productId: string): Promise<void> {
+  await apiClient<void>(`/products/${productId}`, { method: "DELETE" });
+}
+

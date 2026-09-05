@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/features/startups/startup.schema";
 
 import { createStartup } from "@/features/startups/startup.service";
+import { updateStartup } from "@/features/startups/startup.service";
+import type Startup from "@/features/startups/startup.types";
 import { brazilianStates } from "@/features/startups/lib/brazilian-states";
 import Modal from "@/app/components/Modal";
 import TextField from "@/app/components/TextField";
@@ -23,9 +25,10 @@ interface CreateStartupModalProps {
   visible: boolean;
   onHide: () => void;
   onCreated: () => void;
+  startup?: Startup | null;
 }
 
-export default function CreateStartupModal({ visible, onHide, onCreated }: CreateStartupModalProps) {
+export default function CreateStartupModal({ visible, onHide, onCreated, startup = null }: CreateStartupModalProps) {
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -42,6 +45,22 @@ export default function CreateStartupModal({ visible, onHide, onCreated }: Creat
   });
 
   const isLastStep = step === startupSteps.length - 1;
+
+  useEffect(() => {
+    if (visible && startup) {
+      reset({
+        name: startup.name,
+        description: startup.description ?? undefined,
+        problem: startup.problem ?? undefined,
+        solution: startup.solution ?? undefined,
+        segment: startup.segment ?? undefined,
+        target_location: startup.target_location ?? undefined,
+        stage: startup.stage,
+        primary_revenue_model: startup.primary_revenue_model ?? undefined,
+        revenue_model_details: startup.revenue_model_details ?? undefined,
+      });
+    }
+  }, [reset, startup, visible]);
 
   async function goNext(e: React.MouseEvent<HTMLButtonElement>) {
 
@@ -65,18 +84,22 @@ export default function CreateStartupModal({ visible, onHide, onCreated }: Creat
   async function onSubmit(data: CreateStartupFormData) {
     setSubmitError(null);
     try {
-      await createStartup(data);
+      if (startup) {
+        await updateStartup(startup.id, data);
+      } else {
+        await createStartup(data);
+      }
       reset();
       setStep(0);
       onCreated();
     } catch (err) {
-      console.error("Erro ao criar startup:", err);
-      setSubmitError("Não foi possível criar a startup agora. Tente novamente.");
+      console.error("Erro ao salvar startup:", err);
+      setSubmitError("Não foi possível salvar a startup agora. Tente novamente.");
     }
   }
 
   return (
-    <Modal visible={visible} onHide={handleClose} title="Criar nova startup">
+    <Modal visible={visible} onHide={handleClose} title={startup ? "Editar startup" : "Criar nova startup"}>
       <StepProgress steps={startupSteps.map((s) => s.title)} currentStep={step} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
@@ -184,7 +207,7 @@ export default function CreateStartupModal({ visible, onHide, onCreated }: Creat
 
           {isLastStep ? (
             <Button
-              label={isSubmitting ? "Criando..." : "Criar startup"}
+              label={isSubmitting ? "Salvando..." : startup ? "Salvar alterações" : "Criar startup"}
               type="submit"
               disabled={isSubmitting}
               className="w-auto px-6"

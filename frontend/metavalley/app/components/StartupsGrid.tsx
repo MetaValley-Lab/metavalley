@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { getStartups } from "@/features/startups/startup.service";
+import { deleteStartup, getStartups } from "@/features/startups/startup.service";
 import type Startup  from "@/features/startups/startup.types";
 import { ApiError } from "@/lib/api/api-client";
 import StartupCard from "./StartupCard";
 import StartupsEmptyState from "./StartupsEmptyState";
 import CreateStartupModal from "./CreateStartupModal";
+import ConfirmModal from "./ConfirmModal";
 
 export default function StartupsGrid() {
   const router = useRouter();
@@ -16,6 +17,9 @@ export default function StartupsGrid() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingStartup, setEditingStartup] = useState<Startup | null>(null);
+  const [deletingStartup, setDeletingStartup] = useState<Startup | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function loadStartups() {
     setLoading(true);
@@ -70,17 +74,42 @@ export default function StartupsGrid() {
       ) : (
         <div className="flex flex-wrap gap-4">
           {startups.map((startup) => (
-            <StartupCard key={startup.id} startup={startup} />
+            <StartupCard
+              key={startup.id}
+              startup={startup}
+              onEdit={(item) => { setEditingStartup(item); setModalOpen(true); }}
+              onDelete={setDeletingStartup}
+            />
           ))}
         </div>
       )}
 
       <CreateStartupModal
         visible={modalOpen}
-        onHide={() => setModalOpen(false)}
+        startup={editingStartup}
+        onHide={() => { setModalOpen(false); setEditingStartup(null); }}
         onCreated={() => {
           setModalOpen(false);
+          setEditingStartup(null);
           loadStartups();
+        }}
+      />
+      <ConfirmModal
+        visible={Boolean(deletingStartup)}
+        title="Excluir startup"
+        message={`Tem certeza que deseja excluir a startup "${deletingStartup?.name ?? ""}"?`}
+        isSubmitting={deleting}
+        onHide={() => setDeletingStartup(null)}
+        onConfirm={async () => {
+          if (!deletingStartup) return;
+          setDeleting(true);
+          try {
+            await deleteStartup(deletingStartup.id);
+            setDeletingStartup(null);
+            await loadStartups();
+          } finally {
+            setDeleting(false);
+          }
         }}
       />
     </section>

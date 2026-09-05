@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -10,7 +10,8 @@ import {
   productTypeOptions,
   productStageOptions,
 } from "@/features/startups/products/product.schema";
-import { createProduct } from "@/features/startups/products/product.service";
+import { createProduct, updateProduct } from "@/features/startups/products/product.service";
+import type { Product } from "@/features/startups/products/product.types";
 import Modal from "@/app/components/Modal";
 import TextField from "@/app/components/TextField";
 import SelectField from "@/app/components/SelectField";
@@ -22,6 +23,7 @@ interface CreateProductModalProps {
   visible: boolean;
   onHide: () => void;
   onCreated: () => void;
+  product?: Product | null;
 }
 
 export default function CreateProductModal({
@@ -29,6 +31,7 @@ export default function CreateProductModal({
   visible,
   onHide,
   onCreated,
+  product = null,
 }: CreateProductModalProps) {
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -46,6 +49,18 @@ export default function CreateProductModal({
   });
 
   const isLastStep = step === productSteps.length - 1;
+
+  useEffect(() => {
+    if (visible && product) {
+      reset({
+        name: product.name,
+        description: product.description ?? undefined,
+        type: product.type,
+        price: product.price === null ? undefined : String(product.price),
+        stage: product.stage,
+      });
+    }
+  }, [product, reset, visible]);
 
   async function goNext(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -68,27 +83,29 @@ export default function CreateProductModal({
   async function onSubmit(data: CreateProductFormData) {
     setSubmitError(null);
     try {
-      await createProduct({
-        startup_id: startupId,
+      const payload = {
         name: data.name,
         description: data.description || undefined,
         type: data.type,
         price: data.price ? Number(data.price) : undefined,
         stage: data.stage,
-      });
+      };
+      if (product) {
+        await updateProduct(product.id, payload);
+      } else {
+        await createProduct({ startup_id: startupId, ...payload });
+      }
       reset();
       setStep(0);
       onCreated();
     } catch (err) {
-      console.error("Erro ao criar produto:", err);
-      setSubmitError(
-        "Não foi possível criar o produto agora. Tente novamente.",
-      );
+      console.error("Erro ao salvar produto:", err);
+      setSubmitError("Não foi possível salvar o produto agora. Tente novamente.");
     }
   }
 
   return (
-    <Modal visible={visible} onHide={handleClose} title="Criar novo produto">
+    <Modal visible={visible} onHide={handleClose} title={product ? "Editar produto" : "Criar novo produto"}>
       <StepProgress
         steps={productSteps.map((s) => s.title)}
         currentStep={step}
@@ -196,7 +213,7 @@ export default function CreateProductModal({
 
           {isLastStep ? (
             <Button
-              label={isSubmitting ? "Criando..." : "Criar produto"}
+              label={isSubmitting ? "Salvando..." : product ? "Salvar alterações" : "Criar produto"}
               type="submit"
               disabled={isSubmitting}
               className="w-full"

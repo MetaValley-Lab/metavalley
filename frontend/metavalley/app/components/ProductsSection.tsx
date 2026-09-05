@@ -4,10 +4,11 @@
 
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { getProducts } from "@/features/startups/products/product.service";
+import { deleteProduct, getProducts } from "@/features/startups/products/product.service";
 import type { Product } from "@/features/startups/products/product.types";
 import ProductCard from "./ProductCard";
 import CreateProductModal from "./CreateProductModal";
+import ConfirmModal from "./ConfirmModal";
 
 interface ProductsSectionProps {
   startupId: string;
@@ -19,6 +20,9 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
@@ -59,7 +63,12 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
       ) : (
         <div className="flex flex-wrap gap-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onEdit={(item) => { setEditingProduct(item); setModalOpen(true); }}
+              onDelete={setDeletingProduct}
+            />
           ))}
         </div>
       )}
@@ -67,10 +76,30 @@ export default function ProductsSection({ startupId }: ProductsSectionProps) {
       <CreateProductModal
         startupId={startupId}
         visible={modalOpen}
-        onHide={() => setModalOpen(false)}
+        product={editingProduct}
+        onHide={() => { setModalOpen(false); setEditingProduct(null); }}
         onCreated={() => {
           setModalOpen(false);
+          setEditingProduct(null);
           setRefreshKey((k) => k + 1);
+        }}
+      />
+      <ConfirmModal
+        visible={Boolean(deletingProduct)}
+        title="Excluir produto"
+        message={`Tem certeza que deseja excluir o produto "${deletingProduct?.name ?? ""}"?`}
+        isSubmitting={deleting}
+        onHide={() => setDeletingProduct(null)}
+        onConfirm={async () => {
+          if (!deletingProduct) return;
+          setDeleting(true);
+          try {
+            await deleteProduct(deletingProduct.id);
+            setDeletingProduct(null);
+            setRefreshKey((key) => key + 1);
+          } finally {
+            setDeleting(false);
+          }
         }}
       />
     </section>
