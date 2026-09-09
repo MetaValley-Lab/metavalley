@@ -69,6 +69,16 @@ class BoardService:
         - {"event": "turn_complete"}
         - {"event": "error", "detail": "..."}
         """
+        
+        if conv_type == "group":
+            selected_agents = self.router.select(message, mode)
+            
+        elif conv_type in self.agents:
+            selected_agents = [conv_type]
+            
+        else:
+            yield {"event": "error", "detail": f"Tipo de conversa desconhecido: '{conv_type}'."}
+            return
  
         # 1. Pega ou cria a conversa (group, onboarding, ceo, etc.)
         conversation = await self.conversation_service.get_or_create_conversation(

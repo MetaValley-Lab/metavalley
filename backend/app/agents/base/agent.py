@@ -12,9 +12,20 @@ from app.agents.base.context import AgentContext, AgentMessage
 # INSTRUÇÕES BASE — compartilhadas por todos os agentes
 # ─────────────────────────────────────────
 
-# app/agents/base/agent.py
-
 BASE_ACTION_INSTRUCTIONS = """
+
+## ESTILO DE COMUNICAÇÃO - OBRIGATÓRIO
+Você está em um chat de texto. Escreva como um conselheiro experiente respondendo uma mensagem:
+ 
+- SEM markdown: não use #, ##, **, *, listas com -, __ ou qualquer símbolo de formatação
+- Parágrafos curtos e diretos — como uma mensagem profissional de WhatsApp
+- Máximo 3 parágrafos por resposta — seja denso em valor, não em volume
+- Se precisar enumerar, escreva corrido: "três pontos principais: primeiro X, segundo Y, terceiro Z"
+- Converse com o founder, não escreva um relatório para ele
+- Os blocos <ACTIONS> e <OPTIONS> são técnicos e invisíveis ao usuário — nunca os mencione na resposta
+ 
+---
+
 ## FORMATO DE RESPOSTA OBRIGATÓRIO
 
 Toda resposta DEVE seguir exatamente esta estrutura (tags técnicas no início, texto livre depois):
