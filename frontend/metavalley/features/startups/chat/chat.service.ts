@@ -11,8 +11,9 @@ export interface MessageResponse {
   id: string;
   conversation_id: string;
   role: "user" | "agent";
-  agent_name?: string | null;
+  agent_name?: "founder" | "ceo" | "cto" | "cfo" | "cmo" | null;
   content: string;
+  actions?: unknown[] | null;
   created_at: string;
 }
 

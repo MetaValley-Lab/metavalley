@@ -14,11 +14,20 @@ interface ChatLayoutProps {
 export default function ChatLayout({ startupId }: ChatLayoutProps) {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [messagesByContact, setMessagesByContact] = useState<Record<string, ChatMessage[]>>({});
+  const [typingAgents, setTypingAgents] = useState<string[]>([]); 
+  const [typingResetKey, setTypingResetKey] = useState<string | null>(null);
   
   // Usamos um Ref para memorizar quais conversas já buscaram o histórico na API
   const loadedHistories = useRef<Set<string>>(new Set());
 
   const selectedContact = chatContacts.find((c) => c.id === selectedContactId) ?? null;
+
+
+  if (typingResetKey  !== selectedContactId) {
+    setTypingResetKey(selectedContactId);
+    if (typingAgents.length > 0) setTypingAgents([]);
+  }
+  
 
   // 1. CARREGA HISTÓRICO
   useEffect(() => {
@@ -73,6 +82,8 @@ export default function ChatLayout({ startupId }: ChatLayoutProps) {
       [selectedContactId]: [...(prev[selectedContactId] ?? []), userMessage],
     }));
 
+    setTypingAgents([]);
+
     await sendMessageStream(
       {
         startupId,
@@ -80,7 +91,12 @@ export default function ChatLayout({ startupId }: ChatLayoutProps) {
         conversationType: selectedContactId,
       },
       (event: StreamEvent) => {
-        if (event.event === "agent_message") {
+        if (event.event === "agent_start") {
+          setTypingAgents((prev) => (prev.includes(event.agent) ? prev : [...prev, event.agent]));
+        } else if (event.event === "agent_message") {
+          
+          setTypingAgents((prev) => prev.filter((agentId) => agentId !== event.agent));
+
           const agentMessage: ChatMessage = {
             id: `agent-${Date.now()}-${Math.random()}`,
             contactId: selectedContactId,
@@ -94,13 +110,16 @@ export default function ChatLayout({ startupId }: ChatLayoutProps) {
             ...prev,
             [selectedContactId]: [...(prev[selectedContactId] ?? []), agentMessage],
           }));
+        } else if (event.event === "turn_complete") {
+          setTypingAgents([]);
         }
       },
       (errorMessage: string) => {
         console.error("Erro do agente:", errorMessage);
+        setTypingAgents([]);
       },
       () => {
-        // stream finalizado
+        setTypingAgents([]);
       }
     );
   }
@@ -131,6 +150,7 @@ export default function ChatLayout({ startupId }: ChatLayoutProps) {
             messages={messagesByContact[selectedContact.id] ?? []}
             onSendMessage={handleSend}
             onBackToList={() => setSelectedContactId(null)}
+            typingAgents={typingAgents}
           />
         ) : (
           <div className="hidden h-full items-center justify-center text-sm text-gray-400 lg:flex">
