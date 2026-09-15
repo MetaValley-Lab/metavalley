@@ -33,6 +33,7 @@ class StartupStatus(str, Enum):
 
 class StartupBase(BaseModel):
     name: str = Field(..., max_length=255, description="Nome da startup")
+    image_url: Optional[str] = None
     description: Optional[str] = None
     problem: Optional[str] = None
     solution: Optional[str] = None
@@ -50,6 +51,7 @@ class StartupCreate(StartupBase):
 
 class StartupUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
+    image_url: Optional[str] = None
     description: Optional[str] = None
     problem: Optional[str] = None
     solution: Optional[str] = None

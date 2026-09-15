@@ -15,3 +15,8 @@ class UserRegistrationException(AuthException):
     pass
 
 
+class UserEditException(Exception):
+    """Usado na edição do perfil do usuário"""
+    pass
+
+
