@@ -3,9 +3,6 @@
 -- ========================================================
 
 -- 1. Adicionar image_url nas tabelas
-ALTER TABLE public.profiles
-    ADD COLUMN IF NOT EXISTS image_url TEXT;
-
 ALTER TABLE public.startups
     ADD COLUMN IF NOT EXISTS image_url TEXT;
 
@@ -31,7 +28,7 @@ CREATE POLICY "Avatars: usuário autenticado faz upload do próprio avatar"
     WITH CHECK (
         bucket_id = 'avatars'
         AND auth.role() = 'authenticated'
-        AND (storage.foldername(name))[1] = auth.uid()::text
+        AND (storage.foldername(storage.objects.name))[1] = auth.uid()::text
     );
 
 CREATE POLICY "Avatars: usuário autenticado atualiza o próprio avatar"
@@ -39,7 +36,7 @@ CREATE POLICY "Avatars: usuário autenticado atualiza o próprio avatar"
     USING (
         bucket_id = 'avatars'
         AND auth.role() = 'authenticated'
-        AND (storage.foldername(name))[1] = auth.uid()::text
+        AND (storage.foldername(storage.objects.name))[1] = auth.uid()::text
     );
 
 CREATE POLICY "Avatars: usuário autenticado deleta o próprio avatar"
@@ -47,7 +44,7 @@ CREATE POLICY "Avatars: usuário autenticado deleta o próprio avatar"
     USING (
         bucket_id = 'avatars'
         AND auth.role() = 'authenticated'
-        AND (storage.foldername(name))[1] = auth.uid()::text
+        AND (storage.foldername(storage.objects.name))[1] = auth.uid()::text
     );
 
 CREATE POLICY "Avatars: leitura pública"
@@ -66,7 +63,7 @@ CREATE POLICY "Startup images: founder faz upload"
         AND auth.role() = 'authenticated'
         AND EXISTS (
             SELECT 1 FROM public.startups
-            WHERE startups.id::text = (storage.foldername(name))[1]
+            WHERE startups.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
@@ -78,7 +75,7 @@ CREATE POLICY "Startup images: founder atualiza"
         AND auth.role() = 'authenticated'
         AND EXISTS (
             SELECT 1 FROM public.startups
-            WHERE startups.id::text = (storage.foldername(name))[1]
+            WHERE startups.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
@@ -90,7 +87,7 @@ CREATE POLICY "Startup images: founder deleta"
         AND auth.role() = 'authenticated'
         AND EXISTS (
             SELECT 1 FROM public.startups
-            WHERE startups.id::text = (storage.foldername(name))[1]
+            WHERE startups.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
@@ -111,7 +108,7 @@ CREATE POLICY "Product images: founder faz upload"
         AND EXISTS (
             SELECT 1 FROM public.products
             JOIN public.startups ON startups.id = products.startup_id
-            WHERE products.id::text = (storage.foldername(name))[1]
+            WHERE products.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
@@ -124,7 +121,7 @@ CREATE POLICY "Product images: founder atualiza"
         AND EXISTS (
             SELECT 1 FROM public.products
             JOIN public.startups ON startups.id = products.startup_id
-            WHERE products.id::text = (storage.foldername(name))[1]
+            WHERE products.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
@@ -137,7 +134,7 @@ CREATE POLICY "Product images: founder deleta"
         AND EXISTS (
             SELECT 1 FROM public.products
             JOIN public.startups ON startups.id = products.startup_id
-            WHERE products.id::text = (storage.foldername(name))[1]
+            WHERE products.id::text = (storage.foldername(storage.objects.name))[1]
             AND startups.user_id = auth.uid()
         )
     );
