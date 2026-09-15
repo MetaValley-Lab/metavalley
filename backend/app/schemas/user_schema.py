@@ -22,7 +22,7 @@ def validar_telefone_aux(v: str | None) -> str | None:
 
 class UserEditProfileRequest(BaseModel):
     user_name: Optional[str] = None
-    image_url: Optional[str] = None
+    avatar_url: Optional[str] = None
     phone_number: Optional[str] = None
     
     @field_validator("phone_number")
