@@ -31,7 +31,6 @@ class ProductActorRole(str, Enum):
 class ProductCreate(BaseModel):
     startup_id: UUID
     name: str = Field(..., max_length=255)
-    image_url: Optional[str] = None
     description: Optional[str] = None
     type: ProductType
     price: Optional[Decimal] = Field(
@@ -45,7 +44,6 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
-    image_url: Optional[str] = None
     description: Optional[str] = None
     type: Optional[ProductType] = None
     price: Optional[Decimal] = Field(

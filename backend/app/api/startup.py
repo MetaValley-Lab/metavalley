@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from supabase_auth import User
 
 from app.api.dependencies import get_current_user
@@ -59,6 +59,26 @@ async def update_startup(
             detail="Startup não encontrada."
         )
     return updated
+
+
+@router.post("/{startup_id}/image", response_model=StartupResponse)
+async def upload_startup_image(
+    startup_id: str,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        startup = await startup_service.upload_startup_image(
+            startup_id=startup_id,
+            user_id=str(current_user.id),
+            file=file,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error))
+
+    if not startup:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Startup não encontrada.")
+    return startup
 
 
 @router.delete("/{startup_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -18,7 +18,11 @@ export default function StartupCard({ startup, onEdit, onDelete }: StartupCardPr
     <div className="relative w-full max-w-[220px] overflow-hidden rounded-md border border-gray-200 bg-white transition hover:border-gray-300 hover:shadow-sm">
       <Link href={`/startups/${startup.id}`} className="block cursor-pointer">
         <div className="flex h-32 w-full items-center justify-center bg-gray-100">
-          <Rocket className="text-gray-400" size={32} />
+          {startup.image_url ? (
+            <img src={startup.image_url} alt={`Imagem da startup ${startup.name}`} className="h-full w-full object-cover" />
+          ) : (
+            <Rocket className="text-gray-400" size={32} />
+          )}
         </div>
         <p className="border-t border-gray-100 p-3 text-sm font-medium text-gray-900">{startup.name}</p>
       </Link>
