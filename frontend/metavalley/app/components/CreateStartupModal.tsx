@@ -11,8 +11,7 @@ import {
   revenueModelOptions,
 } from "@/features/startups/startup.schema";
 
-import { createStartup } from "@/features/startups/startup.service";
-import { updateStartup } from "@/features/startups/startup.service";
+import { createStartup, updateStartup, uploadStartupImage } from "@/features/startups/startup.service";
 import type Startup from "@/features/startups/startup.types";
 import { brazilianStates } from "@/features/startups/lib/brazilian-states";
 import Modal from "@/app/components/Modal";
@@ -31,6 +30,7 @@ interface CreateStartupModalProps {
 export default function CreateStartupModal({ visible, onHide, onCreated, startup = null }: CreateStartupModalProps) {
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const {
     register,
@@ -76,6 +76,7 @@ export default function CreateStartupModal({ visible, onHide, onCreated, startup
 
   function handleClose() {
     reset();
+    setImageFile(null);
     setStep(0);
     setSubmitError(null);
     onHide();
@@ -86,10 +87,13 @@ export default function CreateStartupModal({ visible, onHide, onCreated, startup
     try {
       if (startup) {
         await updateStartup(startup.id, data);
+        if (imageFile) await uploadStartupImage(startup.id, imageFile);
       } else {
-        await createStartup(data);
+        const createdStartup = await createStartup(data);
+        if (imageFile) await uploadStartupImage(createdStartup.id, imageFile);
       }
       reset();
+      setImageFile(null);
       setStep(0);
       onCreated();
     } catch (err) {
@@ -108,6 +112,11 @@ export default function CreateStartupModal({ visible, onHide, onCreated, startup
             <div className="w-full">
               <TextField id="name" label="Nome da startup" {...register("name")} />
               {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+            </div>
+            <div>
+              <label htmlFor="startup-image" className="mb-1 block text-sm font-medium text-gray-700">Imagem da startup (opcional)</label>
+              <input id="startup-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} className="block w-full text-sm text-gray-600" />
+              {imageFile && <p className="mt-1 text-xs text-gray-500">{imageFile.name}</p>}
             </div>
             <div>
               <TextField id="description" label="Descrição (opcional)" {...register("description")} />

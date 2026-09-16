@@ -36,6 +36,7 @@ def mock_product_data():
         "id": PRODUCT_UUID,
         "startup_id": STARTUP_UUID,
         "name": "Meta Valley SaaS",
+        "image_url": "https://example.com/product.png",
         "description": "Plataforma para gestão de startups.",
         "type": "saas",
         "price": 99.90,
@@ -68,6 +69,7 @@ def test_create_product_default_founder(
     payload = {
         "startup_id": STARTUP_UUID,
         "name": "Meta Valley SaaS",
+        "image_url": "https://example.com/product.png",
         "description": "Plataforma para gestão de startups.",
         "type": "saas",
         "price": 99.90,
@@ -86,6 +88,8 @@ def test_create_product_default_founder(
     assert data["id"] == PRODUCT_UUID
     assert data["startup_id"] == STARTUP_UUID
     assert data["name"] == "Meta Valley SaaS"
+    assert data["image_url"] == "https://example.com/product.png"
+    assert data["image_url"] == "https://example.com/product.png"
     assert data["type"] == "saas"
     assert Decimal(data["price"]) == Decimal("99.90")
     assert data["stage"] == "mvp"
@@ -218,6 +222,7 @@ def test_get_product(
 
     assert data["id"] == PRODUCT_UUID
     assert data["name"] == "Meta Valley SaaS"
+    assert data["image_url"] == "https://example.com/product.png"
     assert data["last_updated_by"] == "founder"
 
 
@@ -261,6 +266,7 @@ def test_update_product_by_founder(
     updated_product = {
         **mock_product_data,
         "name": "Meta Valley SaaS Pro",
+        "image_url": "https://example.com/product-pro.png",
         "last_updated_by": "founder",
     }
 
@@ -274,6 +280,7 @@ def test_update_product_by_founder(
 
     payload = {
         "name": "Meta Valley SaaS Pro",
+        "image_url": "https://example.com/product-pro.png",
         "last_updated_by": "founder",
     }
 
@@ -287,6 +294,7 @@ def test_update_product_by_founder(
     data = response.json()
 
     assert data["name"] == "Meta Valley SaaS Pro"
+    assert data["image_url"] == "https://example.com/product-pro.png"
     assert data["last_updated_by"] == "founder"
 
 

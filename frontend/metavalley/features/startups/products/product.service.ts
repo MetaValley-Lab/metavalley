@@ -22,6 +22,15 @@ export async function updateProduct(
   });
 }
 
+export async function uploadProductImage(productId: string, file: File): Promise<Product> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiClient<Product>(`/products/${productId}/image`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export async function deleteProduct(productId: string): Promise<void> {
   await apiClient<void>(`/products/${productId}`, { method: "DELETE" });
 }

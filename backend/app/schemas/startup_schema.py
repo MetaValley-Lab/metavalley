@@ -64,6 +64,7 @@ class StartupUpdate(BaseModel):
 class StartupResponse(StartupBase):
     id: UUID
     user_id: UUID
+    image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -17,6 +17,15 @@
     return apiClient<Startup>(`startups/${startup_id}`);
   }
 
+  export async function uploadStartupImage(startupId: string, file: File): Promise<Startup> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient<Startup>(`startups/${startupId}/image`, {
+      method: "POST",
+      body: formData,
+    });
+  }
+
   export async function updateStartup(
     startupId: string,
     data: CreateStartupFormData,

@@ -33,11 +33,13 @@ export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const fullUrl = `${baseUrl}${cleanEndpoint}`;
 
+  const isFormData = fetchOptions.body instanceof FormData;
+
   const response = await fetch(fullUrl, {
     ...fetchOptions,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(!isFormData && { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...fetchOptions.headers,
     },
