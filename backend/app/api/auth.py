@@ -108,6 +108,8 @@ async def reset_password(payload: ResetPasswordRequest):
     try:
         return await auth_service.reset_password(
             code=payload.code,
+            access_token=payload.access_token,
+            refresh_token=payload.refresh_token,
             new_password=payload.new_password
         )
     except InvalidCredentialsException as e:

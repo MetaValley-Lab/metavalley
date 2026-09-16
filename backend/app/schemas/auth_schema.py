@@ -46,7 +46,9 @@ class ForgotPassword(BaseModel):
     
 
 class ResetPasswordRequest(BaseModel):
-    code: str 
+    code: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
     new_password: str = Field(
         min_length=8,
         description="A senha deve ter no mínimo 8 caracteres" 
