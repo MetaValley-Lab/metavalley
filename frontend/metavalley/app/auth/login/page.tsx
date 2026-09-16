@@ -103,6 +103,13 @@ export default function LoginPage() {
           />
 
           <p className="mt-4 text-center text-xs text-gray-500">
+            Esqueceu sua senha?{" "}
+            <Link href="/auth/forgot-password" className="font-bold text-[#4735fd]">
+              Restaurar senha
+            </Link>
+          </p>
+
+          <p className="mt-4 text-center text-xs text-gray-500">
             Não possui uma conta?{" "}
             <Link href="/auth/register" className="font-bold text-[#4735fd]">
               Crie uma

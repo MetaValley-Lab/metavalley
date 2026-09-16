@@ -86,13 +86,27 @@ class AuthService:
             }
             
             
-    async def reset_password(self, code: str, new_password: str):
+    async def reset_password(
+        self,
+        code: str | None,
+        new_password: str,
+        access_token: str | None = None,
+        refresh_token: str | None = None,
+    ):
         try:
-            session_response = supabase.auth.exchange_code_for_session({
-                "auth_code": code,
-                "code_verifier": "",
-                "redirect_to": ""
-            })     
+            if access_token and refresh_token:
+                session_response = supabase.auth.set_session(
+                    access_token,
+                    refresh_token,
+                )
+            elif code:
+                session_response = supabase.auth.exchange_code_for_session({
+                    "auth_code": code,
+                    "code_verifier": "",
+                    "redirect_to": ""
+                })
+            else:
+                raise InvalidCredentialsException("Código de restauração ausente.")
             
             if not session_response or not session_response.session:
                 raise InvalidCredentialsException("Código de restauração de senha inválido ou expirado.")
