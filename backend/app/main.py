@@ -27,7 +27,10 @@ app = FastAPI(
 app.state.limiter = limiter    
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
-origens_permitidas = ["*"]
+origens_permitidas = [
+    "http://localhost:3000",
+    "https://metavalley.vercel.app"
+]
 
 app.add_middleware(
     CORSMiddleware,
