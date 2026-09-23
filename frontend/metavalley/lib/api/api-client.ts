@@ -21,13 +21,14 @@ export class ApiError extends Error {
 }
 
 export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-  const { token, ...fetchOptions } = options;
+  const { token: customToken, ...fetchOptions } = options;
 
   if(!API_URL) {
     throw new Error("Erro, NEXT_PUBLIC_API não configurada.");
   }
 
-  console.log(API_URL);
+  const token = customToken ?? (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+
   
   const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`; 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
