@@ -4,15 +4,14 @@ from supabase_auth import User
 from app.core.supabase import supabase
 
 async def get_current_user(request: Request) -> User:
-    # 1. Recupera o token do Cookie HttpOnly ou do Header Authorization
-    token = request.cookies.get("access_token")
-    
-    if token and token.startswith("Bearer "):
-        token = token.replace("Bearer ", "")
-    elif not token:
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
+    # 1. Prefere o header para permitir que clientes cross-site ignorem cookies antigos.
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+        if token and token.startswith("Bearer "):
+            token = token.removeprefix("Bearer ").strip()
 
     if not token:
         raise HTTPException(

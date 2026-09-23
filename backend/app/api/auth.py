@@ -48,6 +48,7 @@ async def login(request: Request, user: UserLogin, response: Response):
         
         return {
             "message": "Login feito com sucesso",
+            "access_token": access_token,
             "user": { "id": auth_user.id, "email": auth_user.email }
         }
         

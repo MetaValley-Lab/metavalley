@@ -55,6 +55,7 @@ def test_login_endpoint_success_sets_cookies_and_returns_user(client, monkeypatc
     assert response.status_code == 200
     body = response.json()
     assert body["message"] == "Login feito com sucesso"
+    assert body["access_token"] == "test-access-token"
     assert body["user"] == {"id": "user-123", "email": "user@example.com"}
 
     set_cookie_value = response.headers.get("set-cookie", "")
