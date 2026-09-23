@@ -36,6 +36,10 @@ export const chatContacts: ChatContact[] = [
   },
 ];
 
+export function getContactById(contactId: string): ChatContact | undefined {
+  return chatContacts.find((contact) => contact.id === contactId);
+}
+
 export const initialMessages: Record<string, ChatMessage[]> = Object.fromEntries(
   chatContacts.map((contact) => [
     contact.id,

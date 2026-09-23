@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from supabase_auth import User
 
 from app.api.dependencies import get_current_user
@@ -100,6 +100,32 @@ async def update_product(
         )
 
     return updated
+
+
+@router.post(
+    "/{product_id}/image",
+    response_model=ProductResponse
+)
+async def upload_product_image(
+    product_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        product = await product_service.upload_product_image(
+            product_id=str(product_id),
+            user_id=str(current_user.id),
+            file=file,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error))
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produto não encontrado ou acesso negado.",
+        )
+    return product
 
 
 @router.delete(

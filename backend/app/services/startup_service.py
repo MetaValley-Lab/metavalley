@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional, cast
 
 from app.core.supabase import supabase
 from app.schemas.startup_schema import StartupCreate, StartupUpdate
+from app.services.image_service import upload_public_image
+from fastapi import UploadFile
 
 
 class StartupService:
@@ -52,6 +54,27 @@ class StartupService:
             return None
         
         return cast(Dict[str, Any], response.data[0])
+
+    async def upload_startup_image(
+        self, startup_id: str, user_id: str, file: UploadFile
+    ) -> Optional[Dict[str, Any]]:
+        startup = await self.get_startup_by_id(startup_id, user_id)
+        if not startup:
+            return None
+
+        image_url = await upload_public_image(
+            file=file,
+            bucket="startup-images",
+            path=f"{startup_id}/image",
+        )
+        response = (
+            supabase.table("startups")
+            .update({"image_url": image_url})
+            .eq("id", startup_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        return cast(Dict[str, Any], response.data[0]) if response.data else None
 
     async def delete_startup(self, startup_id: str, user_id: str) -> bool:
         response = (

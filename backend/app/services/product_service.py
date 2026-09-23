@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, cast
 from app.core.supabase import supabase
 from app.schemas.product_schema import ProductCreate, ProductUpdate
 from app.services.startup_service import StartupService
+from app.services.image_service import upload_public_image
+from fastapi import UploadFile
 
 
 startup_service = StartupService()
@@ -135,6 +137,26 @@ class ProductService:
             Dict[str, Any],
             response.data[0]
         )
+
+    async def upload_product_image(
+        self, product_id: str, user_id: str, file: UploadFile
+    ) -> Optional[Dict[str, Any]]:
+        product = await self.get_product_by_id(product_id, user_id)
+        if not product:
+            return None
+
+        image_url = await upload_public_image(
+            file=file,
+            bucket="product-images",
+            path=f"{product_id}/image",
+        )
+        response = (
+            supabase.table("products")
+            .update({"image_url": image_url})
+            .eq("id", product_id)
+            .execute()
+        )
+        return cast(Dict[str, Any], response.data[0]) if response.data else None
 
     async def delete_product(
         self,

@@ -17,6 +17,7 @@ export default interface Startup {
   id: string;
   user_id: string;
   name: string;
+  image_url: string | null;
   description: string | null;
   problem: string | null;
   solution: string | null;

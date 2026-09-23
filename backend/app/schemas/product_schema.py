@@ -59,6 +59,7 @@ class ProductResponse(BaseModel):
     id: UUID
     startup_id: UUID
     name: str
+    image_url: Optional[str] = None
     description: Optional[str] = None
     type: ProductType
     price: Optional[Decimal] = None

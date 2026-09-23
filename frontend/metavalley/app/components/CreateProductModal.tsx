@@ -10,7 +10,7 @@ import {
   productTypeOptions,
   productStageOptions,
 } from "@/features/startups/products/product.schema";
-import { createProduct, updateProduct } from "@/features/startups/products/product.service";
+import { createProduct, updateProduct, uploadProductImage } from "@/features/startups/products/product.service";
 import type { Product } from "@/features/startups/products/product.types";
 import Modal from "@/app/components/Modal";
 import TextField from "@/app/components/TextField";
@@ -35,6 +35,7 @@ export default function CreateProductModal({
 }: CreateProductModalProps) {
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const {
     register,
@@ -75,6 +76,7 @@ export default function CreateProductModal({
 
   function handleClose() {
     reset();
+    setImageFile(null);
     setStep(0);
     setSubmitError(null);
     onHide();
@@ -92,10 +94,13 @@ export default function CreateProductModal({
       };
       if (product) {
         await updateProduct(product.id, payload);
+        if (imageFile) await uploadProductImage(product.id, imageFile);
       } else {
-        await createProduct({ startup_id: startupId, ...payload });
+        const createdProduct = await createProduct({ startup_id: startupId, ...payload });
+        if (imageFile) await uploadProductImage(createdProduct.id, imageFile);
       }
       reset();
+      setImageFile(null);
       setStep(0);
       onCreated();
     } catch (err) {
@@ -128,6 +133,11 @@ export default function CreateProductModal({
                   {errors.name.message}
                 </p>
               )}
+            </div>
+            <div>
+              <label htmlFor="product-image" className="mb-1 block text-sm font-medium text-gray-700">Imagem do produto (opcional)</label>
+              <input id="product-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} className="block w-full text-sm text-gray-600" />
+              {imageFile && <p className="mt-1 text-xs text-gray-500">{imageFile.name}</p>}
             </div>
             <div>
               <TextField

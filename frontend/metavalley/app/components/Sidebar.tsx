@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,9 +12,13 @@ import {
   Globe,
   Lightbulb,
   FlaskConical,
+  Pencil,
   type LucideIcon,
 } from "lucide-react";
 import Modal from "./Modal";
+import EditProfileModal from "./EditProfileModal";
+import { getProfile } from "@/features/auth/profile.service";
+import type { UserProfile } from "@/features/auth/profile.types";
 
 interface StubFeature {
   id: string;
@@ -113,6 +117,12 @@ export default function Sidebar() {
   const [expanded, setExpanded] = useState(true);
   const [activeStub, setActiveStub] = useState<StubFeature | null>(null);
   const pathname = usePathname();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  useEffect(() => {
+    getProfile().then(setProfile).catch(() => setProfile(null));
+  }, []);
 
   return (
     <>
@@ -167,8 +177,13 @@ export default function Sidebar() {
         {/* 3. Alterado: centraliza a foto do usuário quando a sidebar está recolhida */}
         <div className="border-t border-gray-200 px-3 pt-3">
           <div className={`flex items-center gap-2 ${!expanded ? "justify-center" : ""}`}>
-            <div className="h-8 w-8 shrink-0 rounded-full bg-gray-300" />
-            {expanded && <span className="truncate text-sm text-gray-600">Minha conta</span>}
+            {profile?.avatar_url ? <img src={profile.avatar_url} alt="Foto de perfil" className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <div className="h-8 w-8 shrink-0 rounded-full bg-gray-300" />}
+            {expanded && (
+              <>
+                <span className="min-w-0 flex-1 truncate text-sm text-gray-600">{profile?.username ?? "Minha conta"}</span>
+                <button type="button" aria-label="Editar perfil" onClick={() => setProfileModalOpen(true)} className="cursor-pointer rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"><Pencil size={15} /></button>
+              </>
+            )}
           </div>
         </div>
       </aside>
@@ -179,6 +194,12 @@ export default function Sidebar() {
         </p>
         <p className="mt-3 text-sm text-gray-600">{activeStub?.description}</p>
       </Modal>
+      <EditProfileModal
+        visible={profileModalOpen}
+        profile={profile}
+        onHide={() => setProfileModalOpen(false)}
+        onSaved={(updatedProfile) => setProfile((current) => ({ ...current, ...updatedProfile }))}
+      />
     </>
   );
 }

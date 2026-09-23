@@ -1,10 +1,7 @@
-// Local: features/chat/components/ContactAvatar.tsx
-
 import { Users, Briefcase, Code2, Wallet, Megaphone, type LucideIcon } from "lucide-react";
 import type { ChatContact } from "@/features/startups/chat/chat.types";
 
-const contactIcons: Record<string, LucideIcon> = {
-  "board-executivo": Users,
+const roleIcons: Record<string, LucideIcon> = {
   ceo: Briefcase,
   cto: Code2,
   cfo: Wallet,
@@ -17,7 +14,7 @@ interface ContactAvatarProps {
 }
 
 export default function ContactAvatar({ contact, size = "sm" }: ContactAvatarProps) {
-  const Icon = contactIcons[contact.id] ?? Users;
+  const Icon = contact.isGroup ? Users : (roleIcons[contact.id] ?? Users);
   const dimensionClass = size === "lg" ? "h-20 w-20" : "h-11 w-11";
   const iconSize = size === "lg" ? 32 : 20;
 

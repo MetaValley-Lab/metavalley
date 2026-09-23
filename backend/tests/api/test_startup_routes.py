@@ -25,6 +25,7 @@ def mock_startup_data():
         "id": STARTUP_UUID,
         "user_id": USER_UUID,
         "name": "TechVentures",
+        "image_url": "https://example.com/startup.png",
         "description": "Plataforma SaaS para gestão de startups",
         "problem": "Falta de visibilidade centralizada",
         "solution": "Dashboard em tempo real",
@@ -49,6 +50,7 @@ def test_create_startup_success(client, monkeypatch, mock_authenticated_user, mo
 
     payload = {
         "name": "TechVentures",
+        "image_url": "https://example.com/startup.png",
         "description": "Plataforma SaaS para gestão de startups",
         "problem": "Falta de visibilidade centralizada",
         "solution": "Dashboard em tempo real",
@@ -66,6 +68,7 @@ def test_create_startup_success(client, monkeypatch, mock_authenticated_user, mo
     assert body["id"] == STARTUP_UUID
     assert body["user_id"] == USER_UUID
     assert body["name"] == "TechVentures"
+    assert body["image_url"] == "https://example.com/startup.png"
     assert body["stage"] == "mvp"
 
 
@@ -84,6 +87,7 @@ def test_get_my_startups_success(client, monkeypatch, mock_authenticated_user, m
     assert isinstance(body, list)
     assert len(body) == 1
     assert body[0]["name"] == "TechVentures"
+    assert body[0]["image_url"] == "https://example.com/startup.png"
 
 
 # --- 3. Testes de Busca por ID (GET /startups/{id}) ---
@@ -98,6 +102,7 @@ def test_get_startup_by_id_success(client, monkeypatch, mock_authenticated_user,
 
     assert response.status_code == 200
     assert response.json()["id"] == STARTUP_UUID
+    assert response.json()["image_url"] == "https://example.com/startup.png"
 
 
 def test_get_startup_by_id_not_found(client, monkeypatch, mock_authenticated_user):
@@ -115,7 +120,12 @@ def test_get_startup_by_id_not_found(client, monkeypatch, mock_authenticated_use
 # --- 4. Testes de Atualização (PATCH /startups/{id}) ---
 
 def test_update_startup_success(client, monkeypatch, mock_authenticated_user, mock_startup_data):
-    updated_data = {**mock_startup_data, "name": "TechVentures V2", "stage": "launched"}
+    updated_data = {
+        **mock_startup_data,
+        "name": "TechVentures V2",
+        "image_url": "https://example.com/startup-v2.png",
+        "stage": "launched",
+    }
 
     async def fake_update_startup(startup_id, user_id, payload):
         return updated_data
@@ -124,12 +134,17 @@ def test_update_startup_success(client, monkeypatch, mock_authenticated_user, mo
 
     response = client.patch(
         f"/startups/{STARTUP_UUID}",
-        json={"name": "TechVentures V2", "stage": "launched"}
+        json={
+            "name": "TechVentures V2",
+            "image_url": "https://example.com/startup-v2.png",
+            "stage": "launched",
+        }
     )
 
     assert response.status_code == 200
     body = response.json()
     assert body["name"] == "TechVentures V2"
+    assert body["image_url"] == "https://example.com/startup-v2.png"
     assert body["stage"] == "launched"
 
 
