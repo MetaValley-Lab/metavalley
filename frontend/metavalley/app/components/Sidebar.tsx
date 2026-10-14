@@ -74,7 +74,7 @@ function NavLinkItem({ href, icon: Icon, label, expanded, active }: NavLinkItemP
       href={href}
       className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
         active ? "bg-white font-semibold text-gray-900 shadow-sm" : "text-gray-500 hover:bg-gray-200"
-      } ${!expanded ? "justify-center" : ""}`}
+      } ${expanded ? "justify-start" : "justify-center"}`}
     >
       <Icon size={18} className="shrink-0" />
       {expanded && <span className="truncate">{label}</span>}
@@ -94,8 +94,8 @@ function NavButtonItem({ icon: Icon, label, expanded, onClick }: NavButtonItemPr
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-200 ${
-        !expanded ? "justify-center" : ""
+      className={`flex w-full cursor-pointer gap-3 rounded-lg px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-200 ${
+        expanded ? "!justify-start" : "!justify-center"
       }`}
     >
       <Icon size={18} className="shrink-0" />
