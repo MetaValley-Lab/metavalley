@@ -57,7 +57,10 @@ export const userRegisterSchema = z.object({
       // Retorna no formato E.164 (Ex: "+5511999998888"), garantindo paridade total com o Python
       return phoneNumber ? phoneNumber.number : val;
     }),
-});
+}).refine((data) => data.password === data.confirm_password, {
+    message: "As senhas não coincidem.",
+    path: ["confirm_password"],
+  });
 
 export type RegisterRequest = z.infer<typeof userRegisterSchema>;     // Interface que é enviada para o backend
 export type RegisterFormData = z.infer<typeof userRegisterSchema>;    // Interface do que o formulário recebe

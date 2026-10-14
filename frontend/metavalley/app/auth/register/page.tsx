@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import TextField from "@/app/components/TextField";
 import Button from "@/app/components/Button";
@@ -14,6 +15,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function RegisterPage() {
+  const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -25,17 +27,19 @@ export default function RegisterPage() {
   const router = useRouter();
 
   async function onSubmit(data: RegisterFormData) {
-    try {
-      if (data.password != data.confirm_password) {
-        throw new Error("As senhas não coincidem");
-      }
+    setFormError(null);
 
+    try {
       const response = await registerUser(data);
       if (response) {
         router.push("/auth/login");
       }
     } catch (error) {
-      console.error("Erro ao criar uma conta", error);
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível criar sua conta. Tente novamente.",
+      );
     }
   }
 
@@ -61,6 +65,16 @@ export default function RegisterPage() {
           <p className="mb-6 text-xs text-gray-400">
             Comece a validar suas ideias antes mesmo de construí-las
           </p>
+
+          {formError && (
+            <p
+              className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              role="alert"
+              aria-live="assertive"
+            >
+              {formError}
+            </p>
+          )}
 
           <div className="mb-6 flex flex-col gap-4">
             <div>
