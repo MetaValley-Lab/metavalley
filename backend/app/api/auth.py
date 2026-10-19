@@ -64,9 +64,9 @@ async def login(request: Request, user: UserLogin, response: Response):
     status_code=status.HTTP_201_CREATED,
     summary="Realizar o cadastro da conta"
 )
-async def register(user: UserRegister):
+@limiter.limit("3/minute")
+async def register(request: Request, user: UserRegister):
     try:
-        
         return await auth_service.register_user(user)
     
     except UserRegistrationException as e:
@@ -85,9 +85,7 @@ async def register(user: UserRegister):
         
 
 @router.get("/me")
-async def get_me(
-    current_user=Depends(get_current_user),
-):
+async def get_me(current_user=Depends(get_current_user)):
     return current_user
 
 
@@ -96,7 +94,8 @@ async def get_me(
     status_code=status.HTTP_200_OK,
     summary="Solicitar e-mail de recuperação de senha"
 )
-async def forgot_password(payload: ForgotPassword):
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, payload: ForgotPassword):
     return await auth_service.request_password_reset(email=payload.email)
 
 
@@ -105,7 +104,8 @@ async def forgot_password(payload: ForgotPassword):
     status_code=status.HTTP_200_OK,
     summary="Redefinir senha usando o código recebido por e-mail"
 )
-async def reset_password(payload: ResetPasswordRequest):
+@limiter.limit("5/minute")
+async def reset_password(request: Request, payload: ResetPasswordRequest):
     try:
         return await auth_service.reset_password(
             code=payload.code,
@@ -120,10 +120,15 @@ async def reset_password(payload: ResetPasswordRequest):
         )
 
 
-@router.post("/change-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/change-password", 
+    status_code=status.HTTP_200_OK
+)
+@limiter.limit("5/minute")
 async def change_password(
-    payload: ChangePasswordSchema,
-    current_user: User = Depends(get_current_user)
+    request: Request,
+    payload: ChangePasswordSchema, 
+    current_user: User = Depends(get_current_user),
 ):
     try:
         return await auth_service.change_password(
@@ -133,5 +138,4 @@ async def change_password(
         )
     except InvalidCredentialsException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
-    
+
