@@ -48,7 +48,6 @@ async def login(request: Request, user: UserLogin, response: Response):
         
         return {
             "message": "Login feito com sucesso",
-            "access_token": access_token,
             "user": { "id": auth_user.id, "email": auth_user.email }
         }
         
@@ -138,4 +137,3 @@ async def change_password(
         )
     except InvalidCredentialsException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-

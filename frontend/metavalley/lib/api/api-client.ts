@@ -4,10 +4,6 @@ if (!API_URL) {
   throw new Error("Erro, NEXT_PUBLIC_API não configurada.");
 }
 
-type ApiOptions = RequestInit & {
-  token?: string;
-};
-
 export class ApiError extends Error {
   status: number;
   body: unknown;
@@ -20,16 +16,13 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-  const { token: customToken, ...fetchOptions } = options;
+export async function apiClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const fetchOptions = options;
 
   if(!API_URL) {
     throw new Error("Erro, NEXT_PUBLIC_API não configurada.");
   }
 
-  const token = customToken ?? (typeof window !== "undefined" ? localStorage.getItem("token") : null);
-
-  
   const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`; 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const fullUrl = `${baseUrl}${cleanEndpoint}`;
@@ -41,7 +34,6 @@ export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): 
     credentials: "include",
     headers: {
       ...(!isFormData && { "Content-Type": "application/json" }),
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...fetchOptions.headers,
     },
   });

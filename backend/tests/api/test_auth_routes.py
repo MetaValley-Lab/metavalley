@@ -29,7 +29,7 @@ def test_health_endpoint_is_available(client):
     assert response.json()["status"] == "ok"
 
 
-def test_login_endpoint_success_sets_cookies_and_returns_user(client, monkeypatch):
+def test_login_endpoint_success_sets_cookies_and_returns_user_without_tokens(client, monkeypatch):
     async def fake_authenticate_user(user):
         session = SimpleNamespace(
             access_token="test-access-token",
@@ -55,12 +55,14 @@ def test_login_endpoint_success_sets_cookies_and_returns_user(client, monkeypatc
     assert response.status_code == 200
     body = response.json()
     assert body["message"] == "Login feito com sucesso"
-    assert body["access_token"] == "test-access-token"
+    assert "access_token" not in body
+    assert "refresh_token" not in body
     assert body["user"] == {"id": "user-123", "email": "user@example.com"}
 
     set_cookie_value = response.headers.get("set-cookie", "")
     assert "access_token=test-access-token" in set_cookie_value
     assert "refresh_token=test-refresh-token" in set_cookie_value
+    assert "httponly" in set_cookie_value.lower()
 
 
 def test_login_endpoint_invalid_credentials_returns_401(client, monkeypatch):

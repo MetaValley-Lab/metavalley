@@ -33,7 +33,6 @@ export default function LoginPage() {
         throw new Error("Erro ao fazer login. Tente novamente mais tarde.");
       }
 
-      localStorage.setItem("token", response.access_token);
       router.push("/home");
     } catch (error) {
       setFormError(
