@@ -1,6 +1,6 @@
 import phonenumbers
 from phonenumbers import NumberParseException
-from pydantic import EmailStr, BaseModel, Field, field_validator
+from pydantic import EmailStr, BaseModel, Field, field_validator, model_validator
 
 
 class UserLogin(BaseModel):
@@ -53,6 +53,21 @@ class ResetPasswordRequest(BaseModel):
         min_length=8,
         description="A senha deve ter no mínimo 8 caracteres" 
     )
+
+    @model_validator(mode="after")
+    def validate_credentials(self) -> "ResetPasswordRequest":
+        has_code = bool(self.code and self.code.strip())
+        has_access_token = bool(self.access_token and self.access_token.strip())
+        has_refresh_token = bool(self.refresh_token and self.refresh_token.strip())
+
+        if has_code and not has_access_token and not has_refresh_token:
+            return self
+        if not has_code and has_access_token and has_refresh_token:
+            return self
+
+        raise ValueError(
+            "Forneça um código de restauração ou o par de tokens completo."
+        )
 
 
 class ChangePasswordSchema(BaseModel):

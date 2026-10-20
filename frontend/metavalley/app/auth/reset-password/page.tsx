@@ -58,12 +58,14 @@ function ResetPasswordForm() {
     }
 
     try {
-      await resetPassword(
-        hashCredentials
-          ? { accessToken: hashCredentials.accessToken, refreshToken: hashCredentials.refreshToken }
-          : { code: code ?? undefined },
-        data.password,
-      );
+      if (hashCredentials) {
+        await resetPassword(hashCredentials, data.password);
+      } else if (code) {
+        await resetPassword({ code }, data.password);
+      } else {
+        setSubmitError("O link de restauração é inválido ou expirou.");
+        return;
+      }
       setSuccess(true);
     } catch (error) {
       console.error("Erro ao restaurar senha:", error);

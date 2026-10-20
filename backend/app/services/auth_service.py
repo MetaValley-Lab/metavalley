@@ -93,20 +93,33 @@ class AuthService:
         access_token: str | None = None,
         refresh_token: str | None = None,
     ):
+        normalized_code = code.strip() if code else None
+        normalized_access_token = access_token.strip() if access_token else None
+        normalized_refresh_token = refresh_token.strip() if refresh_token else None
+
         try:
-            if access_token and refresh_token:
-                session_response = supabase.auth.set_session(
-                    access_token,
-                    refresh_token,
-                )
-            elif code:
+            if normalized_code:
+                if normalized_access_token or normalized_refresh_token:
+                    raise InvalidCredentialsException(
+                        "Forneça um código de restauração ou o par de tokens completo."
+                    )
                 session_response = supabase.auth.exchange_code_for_session({
-                    "auth_code": code,
+                    "auth_code": normalized_code,
                     "code_verifier": "",
                     "redirect_to": ""
                 })
+            elif (
+                normalized_access_token
+                and normalized_refresh_token
+            ):
+                session_response = supabase.auth.set_session(
+                    normalized_access_token,
+                    normalized_refresh_token,
+                )
             else:
-                raise InvalidCredentialsException("Código de restauração ausente.")
+                raise InvalidCredentialsException(
+                    "Forneça um código de restauração ou o par de tokens completo."
+                )
             
             if not session_response or not session_response.session:
                 raise InvalidCredentialsException("Código de restauração de senha inválido ou expirado.")
@@ -114,9 +127,12 @@ class AuthService:
             supabase.auth.update_user({"password": new_password})
             
             return {"message": "Senha restaurada com sucesso."}
-            
-        except Exception:
-            raise InvalidCredentialsException("Erro ao restaurar a senha. Solicite um novo link.")
+        except InvalidCredentialsException:
+            raise
+        except AuthApiError as exc:
+            raise InvalidCredentialsException(
+                "Erro ao restaurar a senha. Solicite um novo link."
+            ) from exc
         
     
     async def change_password(self, email: str, current_password: str, new_password):
@@ -141,4 +157,3 @@ class AuthService:
             if isinstance(e, InvalidCredentialsException):
                 raise e
             raise InvalidCredentialsException("Erro ao alterar a senha.")
-

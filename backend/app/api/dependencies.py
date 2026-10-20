@@ -1,4 +1,3 @@
-# app/core/dependencies.py
 from fastapi import Request, HTTPException, status
 from supabase_auth import User
 from app.core.supabase import supabase

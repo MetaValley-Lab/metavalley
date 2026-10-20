@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pytest
 from types import SimpleNamespace
@@ -12,6 +13,8 @@ os.environ.setdefault("IS_PRODUCTION", "false")
 
 from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
 from app.main import app
+from app.core.supabase import supabase
+from app.services.auth_service import AuthService
 
 
 def test_auth_routes_are_registered(client):
@@ -82,6 +85,87 @@ def test_login_endpoint_invalid_credentials_returns_401(client, monkeypatch):
 
     assert response.status_code == 401
     assert response.json()["detail"] == "E-mail ou senha inválidos"
+
+
+def test_reset_password_with_code_exchanges_session_before_updating_user(monkeypatch):
+    calls = []
+
+    def fake_exchange_code(params):
+        calls.append(("exchange", params))
+        return SimpleNamespace(session=object())
+
+    def fake_update_user(attributes):
+        calls.append(("update", attributes))
+
+    monkeypatch.setattr(supabase.auth, "exchange_code_for_session", fake_exchange_code)
+    monkeypatch.setattr(supabase.auth, "update_user", fake_update_user)
+
+    result = asyncio.run(
+        AuthService().reset_password(
+            code="recovery-code",
+            new_password="nova-senha-segura",
+        )
+    )
+
+    assert result == {"message": "Senha restaurada com sucesso."}
+    assert calls == [
+        (
+            "exchange",
+            {
+                "auth_code": "recovery-code",
+                "code_verifier": "",
+                "redirect_to": "",
+            },
+        ),
+        ("update", {"password": "nova-senha-segura"}),
+    ]
+
+
+def test_reset_password_with_hash_credentials_sets_session_before_updating_user(monkeypatch):
+    calls = []
+
+    def fake_set_session(access_token, refresh_token):
+        calls.append(("set_session", access_token, refresh_token))
+        return SimpleNamespace(session=object())
+
+    def fake_update_user(attributes):
+        calls.append(("update", attributes))
+
+    monkeypatch.setattr(supabase.auth, "set_session", fake_set_session)
+    monkeypatch.setattr(supabase.auth, "update_user", fake_update_user)
+
+    result = asyncio.run(
+        AuthService().reset_password(
+            code=None,
+            access_token="access",
+            refresh_token="refresh",
+            new_password="nova-senha-segura",
+        )
+    )
+
+    assert result == {"message": "Senha restaurada com sucesso."}
+    assert calls == [
+        ("set_session", "access", "refresh"),
+        ("update", {"password": "nova-senha-segura"}),
+    ]
+
+
+@pytest.mark.parametrize(
+    "credentials",
+    [
+        {},
+        {"access_token": "access"},
+        {"refresh_token": "refresh"},
+        {"code": "code", "access_token": "access", "refresh_token": "refresh"},
+    ],
+)
+def test_reset_password_rejects_incomplete_or_mixed_credentials(client, credentials):
+    response = client.post(
+        "/auth/reset-password",
+        json={"new_password": "nova-senha-segura", **credentials},
+    )
+
+    assert response.status_code == 422
 
 
 def test_register_endpoint_success_creates_account_without_db(client, monkeypatch):

@@ -33,15 +33,23 @@ export async function requestPasswordReset(email: string): Promise<AuthMessageRe
 }
 
 export async function resetPassword(
-  credentials: { code?: string; accessToken?: string; refreshToken?: string },
+  credentials:
+    | { code: string }
+    | { accessToken: string; refreshToken: string },
   newPassword: string,
 ): Promise<AuthMessageResponse> {
+  const recoveryCredentials =
+    "code" in credentials
+      ? { code: credentials.code }
+      : {
+          access_token: credentials.accessToken,
+          refresh_token: credentials.refreshToken,
+        };
+
   return apiClient<AuthMessageResponse>("auth/reset-password", {
     method: "POST",
     body: JSON.stringify({
-      code: credentials.code,
-      access_token: credentials.accessToken,
-      refresh_token: credentials.refreshToken,
+      ...recoveryCredentials,
       new_password: newPassword,
     }),
   });
