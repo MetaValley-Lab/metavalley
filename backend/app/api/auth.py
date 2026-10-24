@@ -30,7 +30,7 @@ async def login(request: Request, user: UserLogin, response: Response):
             value=access_token,
             httponly=True,
             secure=settings.IS_PRODUCTION,
-            samesite="lax",
+            samesite="none",
             max_age=3600,
             path="/"
         )
@@ -40,7 +40,7 @@ async def login(request: Request, user: UserLogin, response: Response):
             value=refresh_token,
             httponly=True,
             secure=settings.IS_PRODUCTION,
-            samesite="lax",
+            samesite="none",
             max_age=60*60*24*30,
             path="/"
         )
