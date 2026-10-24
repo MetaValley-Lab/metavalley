@@ -1,25 +1,32 @@
 from fastapi import APIRouter, HTTPException, Response, status, Depends, Request
 from supabase_auth import User
+from supabase.client import Client
 
+from app.api.dependencies import get_current_user
 from app.core.config import settings
 from app.core.exceptions import InvalidCredentialsException, UserRegistrationException
+from app.core.limiter import limiter
+from app.core.supabase import get_supabase_client
 from app.schemas.auth_schema import UserLogin, UserRegister, ChangePasswordSchema, ForgotPassword, ResetPasswordRequest
 from app.services.auth_service import AuthService
-from app.api.dependencies import get_current_user
-from app.core.limiter import limiter
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
-auth_service = AuthService()
 
 @router.post(
     "/login", 
     summary="Realiza login e define cookie de sessão"
 )
 @limiter.limit("5/minute")
-async def login(request: Request, user: UserLogin, response: Response):
+async def login(
+    request: Request, 
+    user: UserLogin, 
+    response: Response,
+    supabase_client: Client = Depends(get_supabase_client)
+):
     try:
+        auth_service = AuthService(supabase_client)
         session, auth_user = await auth_service.authenticate_user(user)
         
         access_token = session.access_token
@@ -64,8 +71,13 @@ async def login(request: Request, user: UserLogin, response: Response):
     summary="Realizar o cadastro da conta"
 )
 @limiter.limit("3/minute")
-async def register(request: Request, user: UserRegister):
+async def register(
+    request: Request, 
+    user: UserRegister,
+    supabase_client: Client = Depends(get_supabase_client)
+):
     try:
+        auth_service = AuthService(supabase_client)
         return await auth_service.register_user(user)
     
     except UserRegistrationException as e:
@@ -76,6 +88,7 @@ async def register(request: Request, user: UserRegister):
         
     except HTTPException:
             raise
+        
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -94,7 +107,12 @@ async def get_me(current_user=Depends(get_current_user)):
     summary="Solicitar e-mail de recuperação de senha"
 )
 @limiter.limit("3/minute")
-async def forgot_password(request: Request, payload: ForgotPassword):
+async def forgot_password(
+    request: Request, 
+    payload: ForgotPassword,
+    supabase_client: Client = Depends(get_supabase_client)
+):
+    auth_service = AuthService(supabase_client)
     return await auth_service.request_password_reset(email=payload.email)
 
 
@@ -104,14 +122,20 @@ async def forgot_password(request: Request, payload: ForgotPassword):
     summary="Redefinir senha usando o código recebido por e-mail"
 )
 @limiter.limit("5/minute")
-async def reset_password(request: Request, payload: ResetPasswordRequest):
+async def reset_password(
+    request: Request, 
+    payload: ResetPasswordRequest,
+    supabase_client: Client = Depends(get_supabase_client)
+):
     try:
+        auth_service = AuthService(supabase_client)
         return await auth_service.reset_password(
             code=payload.code,
             access_token=payload.access_token,
             refresh_token=payload.refresh_token,
             new_password=payload.new_password
         )
+        
     except InvalidCredentialsException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -128,12 +152,15 @@ async def change_password(
     request: Request,
     payload: ChangePasswordSchema, 
     current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client),
 ):
     try:
+        auth_service = AuthService(supabase_client)
         return await auth_service.change_password(
             email=str(current_user.email),
             current_password=payload.current_password,
             new_password=payload.new_password
         )
+        
     except InvalidCredentialsException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

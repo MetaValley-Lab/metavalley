@@ -1,8 +1,9 @@
 import json
 from typing import List
 from uuid import UUID
+from supabase.client import Client
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from supabase_auth import User
 
@@ -14,6 +15,7 @@ from app.schemas.chat_schema import (
     ConversationType,
     MessageResponse
 )
+from app.core.supabase import get_supabase_client
 
 from app.services.board_service import BoardService
 from app.services.conversation_service import ConversationService
@@ -21,17 +23,16 @@ from app.services.conversation_service import ConversationService
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
-board_service = BoardService()
-conversation_service = ConversationService()
-
 
 @router.post(
     "/message",
     summary="Envia mensagem ao board de agentes — resposta via Server-Sent Events (SSE)"
 )
 async def send_message(
+    request: Request,
     payload: MessageRequest,
     current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
     """
     Envia uma mensagem e recebe as respostas dos agentes em streaming via SSE.
@@ -81,8 +82,18 @@ async def send_message(
     - `error`:            {"event": "error", "detail": "..."}
     """
 
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+
     async def generate():
         try:
+            board_service = BoardService(supabase_client)
             async for event in board_service.process_group_message(
                 message=payload.message,
                 startup_id=payload.startup_id,
@@ -114,10 +125,12 @@ async def send_message(
     summary="Retorna o histórico de mensagens de uma conversa",
 )
 async def get_message_history(
+    request: Request,
     startup_id: UUID,
     conversation_type: ConversationType,
     limit: int = Query(default=100, ge=1, le=500, description="Máximo de mensagens retornadas"),
     current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
     """
     Retorna as mensagens de uma conversa específica em ordem cronológica.
@@ -129,6 +142,18 @@ async def get_message_history(
     Uso típico no frontend: ao abrir qualquer chat (grupo ou individual),
     chame este endpoint para carregar o histórico antes de exibir o input.
     """
+    
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+    
+    conversation_service = ConversationService(supabase_client)
+    
     messages = await conversation_service.get_messages_by_startup_and_type(
         startup_id=str(startup_id),
         conv_type=conversation_type.value,
@@ -146,8 +171,10 @@ async def get_message_history(
     summary="Lista todas as conversas de uma startup",
 )
 async def get_conversations(
+    request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
     """
     Lista todas as conversas que já existem para a startup.
@@ -159,6 +186,18 @@ async def get_conversations(
     para exibir indicadores visuais nos chats que já têm histórico
     (ex: badge de "N mensagens" no ícone do CEO, CTO, etc.).
     """
+        
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+    
+    conversation_service = ConversationService(supabase_client)
+    
     conversations = await conversation_service.get_conversations_by_startup(
         startup_id=str(startup_id),
     )

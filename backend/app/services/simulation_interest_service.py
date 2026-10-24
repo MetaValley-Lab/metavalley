@@ -1,14 +1,16 @@
 from typing import Any, Dict, List, Optional, cast
+from supabase.client import Client
 
-from app.core.supabase import supabase
+from app.core.supabase import get_supabase_client
 from app.schemas.simulation_interest_schema import SimulationInterestCreate
 from app.services.startup_service import StartupService
 
 
-startup_service = StartupService()
-
-
 class SimulationInterestService:
+    
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
+        self.startup_service = StartupService(supabase_client=self.supabase)
 
     async def create_interest(
         self,
@@ -16,7 +18,7 @@ class SimulationInterestService:
         email: str,
         payload: SimulationInterestCreate
     ) -> Dict[str, Any]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             str(payload.startup_id),
             user_id
         )
@@ -43,7 +45,7 @@ class SimulationInterestService:
         }
 
         response = (
-            supabase
+            self.supabase
             .table("simulation_interests")
             .insert(data)
             .execute()
@@ -61,7 +63,7 @@ class SimulationInterestService:
         startup_id: str,
         user_id: str
     ) -> List[Dict[str, Any]]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             startup_id,
             user_id
         )
@@ -70,7 +72,7 @@ class SimulationInterestService:
             return []
 
         response = (
-            supabase
+            self.supabase
             .table("simulation_interests")
             .select("*")
             .eq("startup_id", startup_id)
@@ -86,7 +88,7 @@ class SimulationInterestService:
         startup_id: str
     ) -> Optional[Dict[str, Any]]:
         response = (
-            supabase
+            self.supabase
             .table("simulation_interests")
             .select("*")
             .eq("user_id", user_id)
@@ -120,7 +122,7 @@ class SimulationInterestService:
         user_id: str
     ) -> bool:
         response = (
-            supabase
+            self.supabase
             .table("simulation_interests")
             .delete()
             .eq("id", interest_id)

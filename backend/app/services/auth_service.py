@@ -1,10 +1,10 @@
 import os
 from supabase_auth.errors import AuthApiError
+from supabase.client import Client
 from dotenv import load_dotenv
 
 
 from app.schemas.auth_schema import UserLogin, UserRegister
-from app.core.supabase import supabase
 from app.core.exceptions import InvalidCredentialsException, AuthException, UserRegistrationException
 
 load_dotenv()
@@ -13,9 +13,12 @@ BASE_URL = str(os.getenv("BASE_URL"))
 
 class AuthService:
     
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
+    
     async def authenticate_user(self, user: UserLogin):
         try:
-            auth_response = supabase.auth.sign_in_with_password({
+            auth_response = self.supabase.auth.sign_in_with_password({
                 "email": user.email,
                 "password": user.password
             })
@@ -37,7 +40,7 @@ class AuthService:
     
     async def register_user(self, user: UserRegister):
         try:
-            auth_response = supabase.auth.sign_up({
+            auth_response = self.supabase.auth.sign_up({
                 "email": user.email,
                 "password": user.password,
                 "options": {
@@ -69,7 +72,7 @@ class AuthService:
         
     async def request_password_reset(self, email: str):
         try:
-            supabase.auth.reset_password_for_email(
+            self.supabase.auth.reset_password_for_email(
                 email=email,
                 options={
                     "redirect_to": f"{BASE_URL}/reset-password"
@@ -103,7 +106,7 @@ class AuthService:
                     raise InvalidCredentialsException(
                         "Forneça um código de restauração ou o par de tokens completo."
                     )
-                session_response = supabase.auth.exchange_code_for_session({
+                session_response = self.supabase.auth.exchange_code_for_session({
                     "auth_code": normalized_code,
                     "code_verifier": "",
                     "redirect_to": ""
@@ -112,7 +115,7 @@ class AuthService:
                 normalized_access_token
                 and normalized_refresh_token
             ):
-                session_response = supabase.auth.set_session(
+                session_response = self.supabase.auth.set_session(
                     normalized_access_token,
                     normalized_refresh_token,
                 )
@@ -124,7 +127,7 @@ class AuthService:
             if not session_response or not session_response.session:
                 raise InvalidCredentialsException("Código de restauração de senha inválido ou expirado.")
             
-            supabase.auth.update_user({"password": new_password})
+            self.supabase.auth.update_user({"password": new_password})
             
             return {"message": "Senha restaurada com sucesso."}
         except InvalidCredentialsException:
@@ -137,7 +140,7 @@ class AuthService:
     
     async def change_password(self, email: str, current_password: str, new_password):
         try:
-            reauth = supabase.auth.sign_in_with_password({
+            reauth = self.supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": current_password
             })
@@ -145,7 +148,7 @@ class AuthService:
             if not reauth.user:
                 raise InvalidCredentialsException("A senha atual fornecida está incorreta.")
             
-            supabase.auth.update_user({
+            self.supabase.auth.update_user({
                 "password": new_password
             })
             

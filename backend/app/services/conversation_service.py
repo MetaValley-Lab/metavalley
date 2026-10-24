@@ -1,5 +1,7 @@
+from supabase.client import Client
+
 from typing import Any, Dict, List, Optional, cast
-from app.core.supabase import supabase
+from app.core.supabase import get_supabase_client
 
 
 class ConversationService:
@@ -9,6 +11,9 @@ class ConversationService:
     As mensagens são a fonte da verdade do histórico de chat (PostgreSQL).
     O Qdrant armazena embeddings para busca semântica (RAG) — propósito diferente.
     """
+    
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
 
     async def get_or_create_conversation(
         self,
@@ -20,7 +25,7 @@ class ConversationService:
         Cada (startup_id, type) é único — constraint no banco.
         """
         response = (
-            supabase.table("conversations")
+            self.supabase.table("conversations")
             .select("*")
             .eq("startup_id", startup_id)
             .eq("type", conv_type)
@@ -33,7 +38,7 @@ class ConversationService:
 
         # Cria nova conversa
         insert_response = (
-            supabase.table("conversations")
+            self.supabase.table("conversations")
             .insert({"startup_id": startup_id, "type": conv_type})
             .execute()
         )
@@ -66,7 +71,7 @@ class ConversationService:
         if actions:
             data["actions"] = actions  # Supabase aceita Python list → JSONB
 
-        response = supabase.table("messages").insert(data).execute()
+        response = self.supabase.table("messages").insert(data).execute()
 
         if not response.data:
             raise Exception("Erro ao salvar mensagem.")
@@ -84,7 +89,7 @@ class ConversationService:
         """
         # Busca as mais recentes primeiro, depois inverte para ordem cronológica
         response = (
-            supabase.table("messages")
+            self.supabase.table("messages")
             .select("id, role, agent_name, content, created_at")
             .eq("conversation_id", conversation_id)
             .order("created_at", desc=True)
@@ -111,7 +116,7 @@ class ConversationService:
         
         """
         conv_response = (
-            supabase.table("conversations")
+            self.supabase.table("conversations")
             .select("id")
             .eq("startup_id", startup_id)
             .eq("type", conv_type)
@@ -125,7 +130,7 @@ class ConversationService:
         conversation_id = conv_response.data[0]["id"]
  
         messages_response = (
-            supabase.table("messages")
+            self.supabase.table("messages")
             .select("*")
             .eq("conversation_id", conversation_id)
             .order("created_at", desc=False)
@@ -144,7 +149,7 @@ class ConversationService:
         Útil para o frontend saber quais chats já possuem histórico.
         """
         response = (
-            supabase.table("conversations")
+            self.supabase.table("conversations")
             .select("*")
             .eq("startup_id", startup_id)
             .order("created_at", desc=False)

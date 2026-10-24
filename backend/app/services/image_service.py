@@ -1,8 +1,7 @@
-from typing import Final
-
 from fastapi import UploadFile
+from typing import Final
+from supabase.client import Client
 
-from app.core.supabase import supabase
 
 
 MAX_IMAGE_SIZE: Final = 5 * 1024 * 1024
@@ -13,6 +12,7 @@ async def upload_public_image(
     file: UploadFile,
     bucket: str,
     path: str,
+    supabase_client: Client
 ) -> str:
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise ValueError("Formato de imagem inválido. Use JPEG, PNG ou WebP.")
@@ -21,7 +21,7 @@ async def upload_public_image(
     if len(content) > MAX_IMAGE_SIZE:
         raise ValueError("A imagem deve ter no máximo 5 MB.")
 
-    supabase.storage.from_(bucket).upload(
+    supabase_client.storage.from_(bucket).upload(
         path,
         content,
         {
@@ -30,4 +30,4 @@ async def upload_public_image(
         },
     )
 
-    return supabase.storage.from_(bucket).get_public_url(path)
+    return supabase_client.storage.from_(bucket).get_public_url(path)

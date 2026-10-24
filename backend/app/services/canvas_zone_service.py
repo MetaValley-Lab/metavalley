@@ -1,21 +1,23 @@
 from typing import Any, Dict, List, Optional, cast
+from supabase.client import Client  
 
-from app.core.supabase import supabase
 from app.schemas.canvas_zone_schema import CanvasZoneCreate, CanvasZoneUpdate
 from app.services.startup_service import StartupService
 
 
-startup_service = StartupService()
-
-
 class CanvasZoneService:
+    
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
+        self.startup_service = StartupService(supabase_client=self.supabase)
+
 
     async def create_zone(
         self,
         user_id: str,
         payload: CanvasZoneCreate
     ) -> Dict[str, Any]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             str(payload.startup_id),
             user_id
         )
@@ -26,7 +28,7 @@ class CanvasZoneService:
         data = payload.model_dump(mode="json")
 
         response = (
-            supabase
+            self.supabase
             .table("canvas_zones")
             .insert(data)
             .execute()
@@ -42,7 +44,7 @@ class CanvasZoneService:
         startup_id: str,
         user_id: str
     ) -> List[Dict[str, Any]]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             startup_id,
             user_id
         )
@@ -51,7 +53,7 @@ class CanvasZoneService:
             return []
 
         response = (
-            supabase
+            self.supabase
             .table("canvas_zones")
             .select("*")
             .eq("startup_id", startup_id)
@@ -67,7 +69,7 @@ class CanvasZoneService:
         user_id: str
     ) -> Optional[Dict[str, Any]]:
         response = (
-            supabase
+            self.supabase
             .table("canvas_zones")
             .select("*, startups!inner(user_id)")
             .eq("id", zone_id)
@@ -114,7 +116,7 @@ class CanvasZoneService:
                 update_data["previous_content"] = current_content
 
         response = (
-            supabase
+            self.supabase
             .table("canvas_zones")
             .update(update_data)
             .eq("id", zone_id)
@@ -140,7 +142,7 @@ class CanvasZoneService:
             return False
 
         response = (
-            supabase
+            self.supabase
             .table("canvas_zones")
             .delete()
             .eq("id", zone_id)

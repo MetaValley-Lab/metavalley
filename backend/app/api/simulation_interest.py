@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from supabase_auth import User
+from supabase.client import Client
 
 from app.api.dependencies import get_current_user
+from app.core.supabase import get_supabase_client
 from app.schemas.simulation_interest_schema import (
     SimulationInterestCreate,
     SimulationInterestResponse,
@@ -15,7 +17,6 @@ router = APIRouter(
     tags=["Simulation Interests"]
 )
 
-simulation_interest_service = SimulationInterestService()
 
 
 @router.post(
@@ -24,15 +25,29 @@ simulation_interest_service = SimulationInterestService()
     status_code=status.HTTP_201_CREATED
 )
 async def create_simulation_interest(
+    request: Request,
     payload: SimulationInterestCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
+        
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+        
     try:
+        simulation_interest_service = SimulationInterestService(supabase_client)
         return await simulation_interest_service.create_interest(
             user_id=str(current_user.id),
             email=str(current_user.email),
             payload=payload
         )
+        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -45,9 +60,22 @@ async def create_simulation_interest(
     response_model=SimulationInterestStatusResponse
 )
 async def get_my_simulation_interest(
+    request: Request, 
     startup_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
+        
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+        
+    simulation_interest_service = SimulationInterestService(supabase_client)
     interested = await simulation_interest_service.has_user_interest(
         user_id=str(current_user.id),
         startup_id=startup_id
@@ -63,9 +91,22 @@ async def get_my_simulation_interest(
     status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_simulation_interest(
+    request: Request,
     interest_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    supabase_client: Client = Depends(get_supabase_client)
 ):
+        
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+    else:
+        token = request.cookies.get("access_token")
+
+    if token:
+        supabase_client.postgrest.auth(token)
+        
+    simulation_interest_service = SimulationInterestService(supabase_client)
     deleted = await simulation_interest_service.delete_interest(
         interest_id=interest_id,
         user_id=str(current_user.id)

@@ -1,6 +1,7 @@
 import asyncio
 from uuid import UUID
 from typing import AsyncGenerator
+from supabase.client import Client
  
 from app.agents.base.context import AgentContext, AgentMessage
 from app.agents.agents import CEOAgent, CTOAgent, CFOAgent, CMOAgent
@@ -28,13 +29,16 @@ class BoardService:
     seguindo o mesmo padrão do restante da aplicação — sem repositories.
     """
  
-    def __init__(self):
-        self.startup_service = StartupService()
-        self.canvas_service = CanvasZoneService()
-        self.planning_service = PlanningItemService()
-        self.product_service = ProductService()
-        self.user_service = UserService()
-        self.conversation_service = ConversationService()
+    def __init__(self, supabase_client: Client):
+        
+        self.supabase = supabase_client
+        
+        self.startup_service = StartupService(supabase_client=self.supabase)
+        self.canvas_service = CanvasZoneService(supabase_client=self.supabase)
+        self.planning_service = PlanningItemService(supabase_client=self.supabase)
+        self.product_service = ProductService(supabase_client=self.supabase)
+        self.user_service = UserService(supabase_client=self.supabase)
+        self.conversation_service = ConversationService(supabase_client=self.supabase)
         self.rag_service = RAGService()
         self.router = AgentRouter()
         self.action_service = ActionService(
@@ -43,6 +47,7 @@ class BoardService:
             planning_service=self.planning_service,
             product_service=self.product_service,
             user_service=self.user_service,
+            supabase_client=self.supabase
         )
         self.agents = {
             "ceo": CEOAgent(),

@@ -1,23 +1,25 @@
 from typing import Any, Dict, List, Optional, cast
+from supabase.client import Client
 
-from app.core.supabase import supabase
+from app.core.supabase import get_supabase_client
 from app.schemas.product_schema import ProductCreate, ProductUpdate
 from app.services.startup_service import StartupService
 from app.services.image_service import upload_public_image
 from fastapi import UploadFile
 
 
-startup_service = StartupService()
-
-
 class ProductService:
+    
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
+        self.startup_service = StartupService(supabase_client=self.supabase)
 
     async def create_product(
         self,
         user_id: str,
         payload: ProductCreate
     ) -> Dict[str, Any]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             str(payload.startup_id),
             user_id
         )
@@ -33,7 +35,7 @@ class ProductService:
         )
 
         response = (
-            supabase
+            self.supabase
             .table("products")
             .insert(data)
             .execute()
@@ -52,7 +54,7 @@ class ProductService:
         startup_id: str,
         user_id: str
     ) -> List[Dict[str, Any]]:
-        startup = await startup_service.get_startup_by_id(
+        startup = await self.startup_service.get_startup_by_id(
             startup_id,
             user_id
         )
@@ -61,7 +63,7 @@ class ProductService:
             return []
 
         response = (
-            supabase
+            self.supabase
             .table("products")
             .select("*")
             .eq("startup_id", startup_id)
@@ -80,7 +82,7 @@ class ProductService:
         user_id: str
     ) -> Optional[Dict[str, Any]]:
         response = (
-            supabase
+            self.supabase
             .table("products")
             .select("*, startups!inner(user_id)")
             .eq("id", product_id)
@@ -123,7 +125,7 @@ class ProductService:
             return existing_product
 
         response = (
-            supabase
+            self.supabase
             .table("products")
             .update(update_data)
             .eq("id", product_id)
@@ -139,7 +141,7 @@ class ProductService:
         )
 
     async def upload_product_image(
-        self, product_id: str, user_id: str, file: UploadFile
+        self, product_id: str, user_id: str, file: UploadFile, supabase_client: Client
     ) -> Optional[Dict[str, Any]]:
         product = await self.get_product_by_id(product_id, user_id)
         if not product:
@@ -149,9 +151,10 @@ class ProductService:
             file=file,
             bucket="product-images",
             path=f"{product_id}/image",
+            supabase_client=supabase_client
         )
         response = (
-            supabase.table("products")
+            self.supabase.table("products")
             .update({"image_url": image_url})
             .eq("id", product_id)
             .execute()
@@ -172,7 +175,7 @@ class ProductService:
             return False
 
         response = (
-            supabase
+            self.supabase
             .table("products")
             .delete()
             .eq("id", product_id)
