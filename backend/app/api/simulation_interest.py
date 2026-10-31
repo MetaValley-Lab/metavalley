@@ -25,21 +25,10 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED
 )
 async def create_simulation_interest(
-    request: Request,
     payload: SimulationInterestCreate,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
-):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-        
+):    
     try:
         simulation_interest_service = SimulationInterestService(supabase_client)
         return await simulation_interest_service.create_interest(
@@ -60,21 +49,10 @@ async def create_simulation_interest(
     response_model=SimulationInterestStatusResponse
 )
 async def get_my_simulation_interest(
-    request: Request, 
     startup_id: str,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
-):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-        
+):      
     simulation_interest_service = SimulationInterestService(supabase_client)
     interested = await simulation_interest_service.has_user_interest(
         user_id=str(current_user.id),
@@ -91,21 +69,10 @@ async def get_my_simulation_interest(
     status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_simulation_interest(
-    request: Request,
     interest_id: str,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-        
     simulation_interest_service = SimulationInterestService(supabase_client)
     deleted = await simulation_interest_service.delete_interest(
         interest_id=interest_id,

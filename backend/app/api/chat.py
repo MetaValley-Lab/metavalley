@@ -29,7 +29,6 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
     summary="Envia mensagem ao board de agentes — resposta via Server-Sent Events (SSE)"
 )
 async def send_message(
-    request: Request,
     payload: MessageRequest,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
@@ -82,15 +81,6 @@ async def send_message(
     - `error`:            {"event": "error", "detail": "..."}
     """
 
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-
     async def generate():
         try:
             board_service = BoardService(supabase_client)
@@ -125,7 +115,6 @@ async def send_message(
     summary="Retorna o histórico de mensagens de uma conversa",
 )
 async def get_message_history(
-    request: Request,
     startup_id: UUID,
     conversation_type: ConversationType,
     limit: int = Query(default=100, ge=1, le=500, description="Máximo de mensagens retornadas"),
@@ -143,17 +132,7 @@ async def get_message_history(
     chame este endpoint para carregar o histórico antes de exibir o input.
     """
     
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-    
     conversation_service = ConversationService(supabase_client)
-    
     messages = await conversation_service.get_messages_by_startup_and_type(
         startup_id=str(startup_id),
         conv_type=conversation_type.value,
@@ -171,7 +150,6 @@ async def get_message_history(
     summary="Lista todas as conversas de uma startup",
 )
 async def get_conversations(
-    request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
@@ -187,20 +165,9 @@ async def get_conversations(
     (ex: badge de "N mensagens" no ícone do CEO, CTO, etc.).
     """
         
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-    
     conversation_service = ConversationService(supabase_client)
-    
     conversations = await conversation_service.get_conversations_by_startup(
         startup_id=str(startup_id),
     )
- 
     return conversations
     

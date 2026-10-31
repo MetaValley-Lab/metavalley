@@ -16,21 +16,7 @@ router = APIRouter(prefix="/user", tags=["User"])
 async def get_profile(
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client),
-    request: Request = None # Certifique-se de importar Request do fastapi se necessário
 ):
-    # ⚡️ EXTRAI O TOKEN DO USUÁRIO CORRENTE (dos cookies ou do header)
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-        if token and token.startswith("Bearer "):
-            token = token.removeprefix("Bearer ").strip()
-
-    # ⚡️ AJUSTE CRÍTICO: Vincula o token do usuário logado nesta instância do cliente
-    if token:
-        supabase_client.postgrest.auth(token)
-
     user_service = UserService(supabase_client)
     profile = await user_service.get_profile(user_id=current_user.id)
     if not profile:
@@ -44,20 +30,9 @@ async def get_profile(
     summary="Marca o onboarding do usuário como concluído"
 )
 async def completed_onboarding(
-    request: Request,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client) 
 ):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-        
     try:
         user_service = UserService(supabase_client)
         return await user_service.complete_onboarding(user_id=current_user.id)
@@ -81,21 +56,10 @@ async def completed_onboarding(
     summary="Endpoint responsável por editar informações do usupario"
 )
 async def edit_profile(
-    request: Request,
     profile_edits: UserEditProfileRequest,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-    
     try:
         user_service = UserService(supabase_client)
         return await user_service.edit_profile(
@@ -118,21 +82,10 @@ async def edit_profile(
 
 @router.post("/avatar", status_code=status.HTTP_200_OK)
 async def upload_avatar(
-    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
-        
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
-        
     try:
         user_service = UserService(supabase_client)
         profile = await user_service.upload_avatar(user_id=current_user.id, file=file, supabase_client=supabase_client)

@@ -27,19 +27,10 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED
 )
 async def create_canvas_zone(
-    request: Request,
     payload: CanvasZoneCreate,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
     try:
         canvas_zone_service = CanvasZoneService(supabase_client)
         return await canvas_zone_service.create_zone(
@@ -59,19 +50,10 @@ async def create_canvas_zone(
     response_model=List[CanvasZoneResponse]
 )
 async def get_startup_canvas_zones(
-    request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
     supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.removeprefix("Bearer ").strip()
-    else:
-        token = request.cookies.get("access_token")
-
-    if token:
-        supabase_client.postgrest.auth(token)
     canvas_zone_service = CanvasZoneService(supabase_client)
     zones = await canvas_zone_service.get_zones_by_startup(
         startup_id=str(startup_id),
