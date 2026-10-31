@@ -1,4 +1,4 @@
-from supabase.client import Client
+from supabase import AsyncClient
 
 from typing import Any, Dict, List, Optional, cast
 from app.core.supabase import get_supabase_client
@@ -12,7 +12,7 @@ class ConversationService:
     O Qdrant armazena embeddings para busca semântica (RAG) — propósito diferente.
     """
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
 
     async def get_or_create_conversation(
@@ -24,7 +24,7 @@ class ConversationService:
         Retorna a conversa existente ou cria uma nova.
         Cada (startup_id, type) é único — constraint no banco.
         """
-        response = (
+        response = await (
             self.supabase.table("conversations")
             .select("*")
             .eq("startup_id", startup_id)
@@ -37,7 +37,7 @@ class ConversationService:
             return cast(Dict[str, Any], response.data[0])
 
         # Cria nova conversa
-        insert_response = (
+        insert_response = await (
             self.supabase.table("conversations")
             .insert({"startup_id": startup_id, "type": conv_type})
             .execute()
@@ -71,7 +71,7 @@ class ConversationService:
         if actions:
             data["actions"] = actions  # Supabase aceita Python list → JSONB
 
-        response = self.supabase.table("messages").insert(data).execute()
+        response = await self.supabase.table("messages").insert(data).execute()
 
         if not response.data:
             raise Exception("Erro ao salvar mensagem.")
@@ -88,7 +88,7 @@ class ConversationService:
         Usado para montar o sliding window do contexto dos agentes.
         """
         # Busca as mais recentes primeiro, depois inverte para ordem cronológica
-        response = (
+        response = await (
             self.supabase.table("messages")
             .select("id, role, agent_name, content, created_at")
             .eq("conversation_id", conversation_id)
@@ -115,7 +115,7 @@ class ConversationService:
         o frontend interpreta isso como chat sem histórico ainda.
         
         """
-        conv_response = (
+        conv_response = await (
             self.supabase.table("conversations")
             .select("id")
             .eq("startup_id", startup_id)
@@ -129,7 +129,7 @@ class ConversationService:
  
         conversation_id = conv_response.data[0]["id"]
  
-        messages_response = (
+        messages_response = await (
             self.supabase.table("messages")
             .select("*")
             .eq("conversation_id", conversation_id)
@@ -148,7 +148,7 @@ class ConversationService:
         Lista todas as conversas que existem para uma startup.
         Útil para o frontend saber quais chats já possuem histórico.
         """
-        response = (
+        response = await (
             self.supabase.table("conversations")
             .select("*")
             .eq("startup_id", startup_id)

@@ -1,7 +1,7 @@
 import asyncio
 from uuid import UUID
 from typing import AsyncGenerator
-from supabase.client import Client
+from supabase import AsyncClient
  
 from app.agents.base.context import AgentContext, AgentMessage
 from app.agents.agents import CEOAgent, CTOAgent, CFOAgent, CMOAgent
@@ -29,7 +29,7 @@ class BoardService:
     seguindo o mesmo padrão do restante da aplicação — sem repositories.
     """
  
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         
         self.supabase = supabase_client
         

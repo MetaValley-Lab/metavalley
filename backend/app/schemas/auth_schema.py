@@ -3,6 +3,9 @@ from phonenumbers import NumberParseException
 from pydantic import EmailStr, BaseModel, Field, field_validator, model_validator
 
 
+def normalize_email_value(value: str) -> str:
+    return value.strip().lower()
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(
@@ -10,9 +13,17 @@ class UserLogin(BaseModel):
         description="Senha do usuário"
     )
     
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return normalize_email_value(v)
+    
     
 class UserRegister(BaseModel):
-    username: str
+    username: str = Field(
+        min_length=3,
+        max_length=50
+    )
     email: EmailStr
     password: str = Field(
         min_length=8,
@@ -22,6 +33,16 @@ class UserRegister(BaseModel):
         description="Telefone no formato nacional (11 99999-8888) ou internacional (+1 202 555 0123)",
         examples=["(11) 99999-8888", "+5511999998888", "+12025550123"]
     )
+    
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        value = value.strip()
+        
+        if not value:
+            raise ValueError("O nome de usuário é obrigatório.")
+        
+        return value
 
     @field_validator("phone_number")
     @classmethod
@@ -39,10 +60,21 @@ class UserRegister(BaseModel):
             
         except NumberParseException:
             raise ValueError("Formato de número de telefone inválido.")
+
+    
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return normalize_email_value(v)
         
 
 class ForgotPassword(BaseModel):
-    email: str
+    email: EmailStr
+    
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return normalize_email_value(v)
     
 
 class ResetPasswordRequest(BaseModel):
@@ -79,3 +111,5 @@ class ChangePasswordSchema(BaseModel):
         min_length=8,
         description="A senha deve no mínimo ter 8 caracteres."
     )
+    
+    

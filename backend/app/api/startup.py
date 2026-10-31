@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.api.dependencies import get_current_user
 from app.schemas.startup_schema import StartupCreate, StartupResponse, StartupUpdate
@@ -36,7 +36,7 @@ async def create_startup(
 async def get_my_startups(
     request: Request,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     # ⚡️ Injeta o token de autenticação no cliente para satisfazer as regras de RLS do banco
     auth_header = request.headers.get("Authorization")
@@ -58,7 +58,7 @@ async def get_startup(
     request: Request,
     startup_id: str,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -75,7 +75,7 @@ async def get_startup(
         startup_id=startup_id, 
         user_id=str(current_user.id)
     )
-    print(f"[DEBUGIN STARTUP]: {startup}")
+    
     if not startup:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -90,7 +90,7 @@ async def update_startup(
     startup_id: str,
     payload: StartupUpdate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -122,7 +122,7 @@ async def upload_startup_image(
     startup_id: str,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -155,7 +155,7 @@ async def delete_startup(
     request: Request,
     startup_id: str,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
 
     auth_header = request.headers.get("Authorization")

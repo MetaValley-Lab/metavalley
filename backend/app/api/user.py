@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.services.user_service import UserService
 from app.api.dependencies import get_current_user
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/user", tags=["User"])
 @router.get("/profile", status_code=status.HTTP_200_OK)
 async def get_profile(
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client),
+    supabase_client: AsyncClient = Depends(get_supabase_client),
     request: Request = None # Certifique-se de importar Request do fastapi se necessário
 ):
     # ⚡️ EXTRAI O TOKEN DO USUÁRIO CORRENTE (dos cookies ou do header)
@@ -46,7 +46,7 @@ async def get_profile(
 async def completed_onboarding(
     request: Request,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client) 
+    supabase_client: AsyncClient = Depends(get_supabase_client) 
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -84,7 +84,7 @@ async def edit_profile(
     request: Request,
     profile_edits: UserEditProfileRequest,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -121,7 +121,7 @@ async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")

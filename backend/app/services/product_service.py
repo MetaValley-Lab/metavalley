@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, cast
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.core.supabase import get_supabase_client
 from app.schemas.product_schema import ProductCreate, ProductUpdate
@@ -10,7 +10,7 @@ from fastapi import UploadFile
 
 class ProductService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
         self.startup_service = StartupService(supabase_client=self.supabase)
 
@@ -34,7 +34,7 @@ class ProductService:
             exclude_unset=True
         )
 
-        response = (
+        response = await (
             self.supabase
             .table("products")
             .insert(data)
@@ -62,7 +62,7 @@ class ProductService:
         if not startup:
             return []
 
-        response = (
+        response = await (
             self.supabase
             .table("products")
             .select("*")
@@ -81,7 +81,7 @@ class ProductService:
         product_id: str,
         user_id: str
     ) -> Optional[Dict[str, Any]]:
-        response = (
+        response = await (
             self.supabase
             .table("products")
             .select("*, startups!inner(user_id)")
@@ -124,7 +124,7 @@ class ProductService:
         if not update_data:
             return existing_product
 
-        response = (
+        response = await (
             self.supabase
             .table("products")
             .update(update_data)
@@ -141,7 +141,7 @@ class ProductService:
         )
 
     async def upload_product_image(
-        self, product_id: str, user_id: str, file: UploadFile, supabase_client: Client
+        self, product_id: str, user_id: str, file: UploadFile, supabase_client: AsyncClient
     ) -> Optional[Dict[str, Any]]:
         product = await self.get_product_by_id(product_id, user_id)
         if not product:
@@ -153,7 +153,7 @@ class ProductService:
             path=f"{product_id}/image",
             supabase_client=supabase_client
         )
-        response = (
+        response = await (
             self.supabase.table("products")
             .update({"image_url": image_url})
             .eq("id", product_id)
@@ -174,7 +174,7 @@ class ProductService:
         if not existing_product:
             return False
 
-        response = (
+        response = await (
             self.supabase
             .table("products")
             .delete()

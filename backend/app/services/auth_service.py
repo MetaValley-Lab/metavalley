@@ -1,6 +1,6 @@
 import os
 from supabase_auth.errors import AuthApiError
-from supabase.client import Client
+from supabase import AsyncClient
 from dotenv import load_dotenv
 
 
@@ -13,12 +13,12 @@ BASE_URL = str(os.getenv("BASE_URL"))
 
 class AuthService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
     
     async def authenticate_user(self, user: UserLogin):
         try:
-            auth_response = self.supabase.auth.sign_in_with_password({
+            auth_response = await self.supabase.auth.sign_in_with_password({
                 "email": user.email,
                 "password": user.password
             })
@@ -30,17 +30,23 @@ class AuthService:
                 raise InvalidCredentialsException("Sessão ou usuários não forma retornados.")
                 
             return session, auth_user
+        
         except AuthException:
             raise InvalidCredentialsException("E-mail ou senha inválidos")
-        except Exception as e:
-            if isinstance(e, InvalidCredentialsException):
-                raise e 
-            raise InvalidCredentialsException("Erro no processo de autenticação.")
+        
+        except InvalidCredentialsException:
+            raise
+        
+        except Exception:
+            # logger.exception("Erro inesperado durante a autenticação")
+            raise AuthException(
+                "Serviço de autenticação temporariamente indisponível"
+            )
             
     
     async def register_user(self, user: UserRegister):
         try:
-            auth_response = self.supabase.auth.sign_up({
+            auth_response = await self.supabase.auth.sign_up({
                 "email": user.email,
                 "password": user.password,
                 "options": {
@@ -62,6 +68,7 @@ class AuthService:
                     "email": auth_user.email
                 }
             }
+            
         except AuthApiError as e:
             raise UserRegistrationException(f"Falha ao cadastrar usuário: {e.message}")
         except Exception as e:
@@ -72,7 +79,7 @@ class AuthService:
         
     async def request_password_reset(self, email: str):
         try:
-            self.supabase.auth.reset_password_for_email(
+            await self.supabase.auth.reset_password_for_email(
                 email=email,
                 options={
                     "redirect_to": f"{BASE_URL}/reset-password"
@@ -106,7 +113,7 @@ class AuthService:
                     raise InvalidCredentialsException(
                         "Forneça um código de restauração ou o par de tokens completo."
                     )
-                session_response = self.supabase.auth.exchange_code_for_session({
+                session_response = await self.supabase.auth.exchange_code_for_session({
                     "auth_code": normalized_code,
                     "code_verifier": "",
                     "redirect_to": ""
@@ -115,7 +122,7 @@ class AuthService:
                 normalized_access_token
                 and normalized_refresh_token
             ):
-                session_response = self.supabase.auth.set_session(
+                session_response = await self.supabase.auth.set_session(
                     normalized_access_token,
                     normalized_refresh_token,
                 )
@@ -127,7 +134,7 @@ class AuthService:
             if not session_response or not session_response.session:
                 raise InvalidCredentialsException("Código de restauração de senha inválido ou expirado.")
             
-            self.supabase.auth.update_user({"password": new_password})
+            await self.supabase.auth.update_user({"password": new_password})
             
             return {"message": "Senha restaurada com sucesso."}
         except InvalidCredentialsException:
@@ -140,15 +147,15 @@ class AuthService:
     
     async def change_password(self, email: str, current_password: str, new_password):
         try:
-            reauth = self.supabase.auth.sign_in_with_password({
+            reauth = await self.supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": current_password
             })
             
-            if not reauth.user:
+            if not reauth.user or not reauth.session:
                 raise InvalidCredentialsException("A senha atual fornecida está incorreta.")
             
-            self.supabase.auth.update_user({
+            await self.supabase.auth.update_user({
                 "password": new_password
             })
             

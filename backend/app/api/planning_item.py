@@ -1,6 +1,6 @@
 from typing import List
 from uuid import UUID
-from supabase.client import Client
+from supabase import AsyncClient
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from supabase_auth import User
@@ -18,7 +18,7 @@ async def create_planning_item(
     request: Request,
     payload: PlanningItemCreate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -42,7 +42,7 @@ async def get_startup_planning_items(
     request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
      
     auth_header = request.headers.get("Authorization")
@@ -67,7 +67,7 @@ async def update_planning_item(
     item_id: UUID,
     payload: PlanningItemUpdate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -98,7 +98,7 @@ async def delete_planning_item(
     request: Request,
     item_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")

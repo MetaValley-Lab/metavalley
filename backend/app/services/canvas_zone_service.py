@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, cast
-from supabase.client import Client  
+from supabase import AsyncClient  
 
 from app.schemas.canvas_zone_schema import CanvasZoneCreate, CanvasZoneUpdate
 from app.services.startup_service import StartupService
@@ -7,7 +7,7 @@ from app.services.startup_service import StartupService
 
 class CanvasZoneService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
         self.startup_service = StartupService(supabase_client=self.supabase)
 
@@ -27,7 +27,7 @@ class CanvasZoneService:
 
         data = payload.model_dump(mode="json")
 
-        response = (
+        response = await (
             self.supabase
             .table("canvas_zones")
             .insert(data)
@@ -52,7 +52,7 @@ class CanvasZoneService:
         if not startup:
             return []
 
-        response = (
+        response = await (
             self.supabase
             .table("canvas_zones")
             .select("*")
@@ -68,7 +68,7 @@ class CanvasZoneService:
         zone_id: str,
         user_id: str
     ) -> Optional[Dict[str, Any]]:
-        response = (
+        response = await (
             self.supabase
             .table("canvas_zones")
             .select("*, startups!inner(user_id)")
@@ -115,7 +115,7 @@ class CanvasZoneService:
             if new_content != current_content:
                 update_data["previous_content"] = current_content
 
-        response = (
+        response = await (
             self.supabase
             .table("canvas_zones")
             .update(update_data)
@@ -141,7 +141,7 @@ class CanvasZoneService:
         if not existing_zone:
             return False
 
-        response = (
+        response = await (
             self.supabase
             .table("canvas_zones")
             .delete()

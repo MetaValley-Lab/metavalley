@@ -1,4 +1,4 @@
-from supabase.client import Client
+from supabase import AsyncClient
 from app.core.exceptions import UserRegistrationException, UserEditException
 from app.schemas.user_schema import UserEditProfileRequest
 from app.services.image_service import upload_public_image
@@ -6,11 +6,11 @@ from fastapi import UploadFile, HTTPException, status # 👈 Adicionado para os 
 
 class UserService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
 
     async def get_profile(self, user_id: str):
-        response = (
+        response = await (
             self.supabase.table("profiles")
             .select("id, username, phone_number, avatar_url")
             .eq("id", user_id)
@@ -30,7 +30,7 @@ class UserService:
     
     async def complete_onboarding(self, user_id: str):
         try:
-            response = (
+            response = await (
                 self.supabase.table("profiles")
                 .update({"onboarding_completed": True})
                 .eq("id", user_id)
@@ -55,7 +55,7 @@ class UserService:
             return {"message": "Nenhuma alteração foi fornecida."}
         
         try:
-            response = (
+            response = await (
                 self.supabase.table("profiles")
                 .update(payload)
                 .eq("id", user_id)
@@ -69,7 +69,7 @@ class UserService:
             raise UserEditException(f"Erro ao atualizar as informações do perfil: {str(e)}")
 
     # 💡 Ajustado: Como a classe já possui 'self.supabase', não é necessário pedir o 'supabase_client' por parâmetro aqui.
-    async def upload_avatar(self, user_id: str, file: UploadFile, supabase_client: Client):
+    async def upload_avatar(self, user_id: str, file: UploadFile, supabase_client: AsyncClient):
         try:
             avatar_url = await upload_public_image(
                 file=file,
@@ -77,7 +77,7 @@ class UserService:
                 path=f"{user_id}/avatar",
                 supabase_client=self.supabase # 👈 Usa o cliente injetado na classe
             )
-            response = (
+            response = await (
                 self.supabase.table("profiles")
                 .update({"avatar_url": avatar_url})
                 .eq("id", user_id)

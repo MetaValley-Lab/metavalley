@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, status, Depends, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.api.dependencies import get_current_user
 from app.core.config import settings
@@ -23,7 +23,7 @@ async def login(
     request: Request, 
     user: UserLogin, 
     response: Response,
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     try:
         auth_service = AuthService(supabase_client)
@@ -74,7 +74,7 @@ async def login(
 async def register(
     request: Request, 
     user: UserRegister,
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     try:
         auth_service = AuthService(supabase_client)
@@ -110,7 +110,7 @@ async def get_me(current_user=Depends(get_current_user)):
 async def forgot_password(
     request: Request, 
     payload: ForgotPassword,
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     auth_service = AuthService(supabase_client)
     return await auth_service.request_password_reset(email=payload.email)
@@ -125,7 +125,7 @@ async def forgot_password(
 async def reset_password(
     request: Request, 
     payload: ResetPasswordRequest,
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     try:
         auth_service = AuthService(supabase_client)
@@ -152,7 +152,7 @@ async def change_password(
     request: Request,
     payload: ChangePasswordSchema, 
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client),
+    supabase_client: AsyncClient = Depends(get_supabase_client),
 ):
     try:
         auth_service = AuthService(supabase_client)

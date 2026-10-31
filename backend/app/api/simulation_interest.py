@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.api.dependencies import get_current_user
 from app.core.supabase import get_supabase_client
@@ -28,7 +28,7 @@ async def create_simulation_interest(
     request: Request,
     payload: SimulationInterestCreate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -63,7 +63,7 @@ async def get_my_simulation_interest(
     request: Request, 
     startup_id: str,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -94,7 +94,7 @@ async def delete_simulation_interest(
     request: Request,
     interest_id: str,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")

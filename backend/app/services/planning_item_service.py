@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, cast
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.core.supabase import get_supabase_client
 from app.schemas.planning_item_schema import PlanningItemCreate, PlanningItemUpdate
@@ -9,7 +9,7 @@ from app.services.startup_service import StartupService
 
 class PlanningItemService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
         self.startup_service = StartupService(supabase_client=self.supabase)
         
@@ -23,7 +23,7 @@ class PlanningItemService:
         # A pessoa que criou é também quem fez a última atualização inicial
         data["last_updated_by"] = data["created_by"]
 
-        response = self.supabase.table("planning_items").insert(data).execute()
+        response = await self.supabase.table("planning_items").insert(data).execute()
         
         if not response.data:
             raise Exception("Erro ao criar planning item.")
@@ -34,23 +34,25 @@ class PlanningItemService:
         if not startup:
             return []
 
-        response = (
+        response = await (
             self.supabase.table("planning_items")
             .select("*")
             .eq("startup_id", startup_id)
             .order("created_at", desc=False)
             .execute()
         )
+        
         return cast(List[Dict[str, Any]], response.data or [])
 
     async def get_item_by_id(self, item_id: str, user_id: str) -> Optional[Dict[str, Any]]:
-        response = (
+        response = await (
             self.supabase.table("planning_items")
             .select("*, startups!inner(user_id)")
             .eq("id", item_id)
             .eq("startups.user_id", user_id)
             .execute()
         )
+        
         if not response.data:
             return None
             
@@ -83,7 +85,7 @@ class PlanningItemService:
         if not update_data:
             return existing_item
 
-        response = self.supabase.table("planning_items").update(update_data).eq("id", item_id).execute()
+        response = await self.supabase.table("planning_items").update(update_data).eq("id", item_id).execute()
         return cast(Dict[str, Any], response.data[0]) if response.data else None
 
     async def delete_item(self, item_id: str, user_id: str) -> bool:
@@ -91,5 +93,8 @@ class PlanningItemService:
         if not existing_item:
             return False
 
-        response = self.supabase.table("planning_items").delete().eq("id", item_id).execute()
+        response = await self.supabase.table("planning_items").delete().eq("id", item_id).execute()
         return isinstance(response.data, list) and len(response.data) > 0
+    
+    
+    

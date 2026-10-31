@@ -1,5 +1,5 @@
 from uuid import UUID
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.core.supabase import get_supabase_client
 
@@ -28,7 +28,7 @@ class ActionService:
         planning_service: PlanningItemService,
         product_service: ProductService,
         user_service: UserService,
-        supabase_client: Client
+        supabase_client: AsyncClient
     ):
         self.startup_service = startup_service
         self.canvas_service = canvas_service
@@ -98,7 +98,7 @@ class ActionService:
         filled_by = action.get("filled_by", agent_name)
  
         # Verifica se já existe
-        existing = (
+        existing = await (
             self.supabase.table("canvas_zones")
             .select("id, content")
             .eq("startup_id", str(startup_id))
@@ -124,11 +124,11 @@ class ActionService:
                 if content != current_content:
                     update_data["previous_content"] = current_content
      
-                self.supabase.table("canvas_zones").update(update_data).eq("id", zone_id).execute()
+                await self.supabase.table("canvas_zones").update(update_data).eq("id", zone_id).execute()
             else:
                 return {"ok": False, "error": "Formato de dados retornado do banco é inválido."}
         else:
-            self.supabase.table("canvas_zones").insert({
+            await self.supabase.table("canvas_zones").insert({
                 "startup_id": str(startup_id),
                 "zone_key": zone_key,
                 "content": content,

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.api.dependencies import get_current_user
 from app.schemas.product_schema import (
@@ -31,7 +31,7 @@ async def create_product(
     request: Request,
     payload: ProductCreate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -65,7 +65,7 @@ async def get_startup_products(
     request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
         
     auth_header = request.headers.get("Authorization")
@@ -92,7 +92,7 @@ async def get_product(
     request: Request,
     product_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -128,7 +128,7 @@ async def update_product(
     product_id: UUID,
     payload: ProductUpdate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -165,7 +165,7 @@ async def upload_product_image(
     product_id: UUID,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")
@@ -204,7 +204,7 @@ async def delete_product(
     request: Request,
     product_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     
     auth_header = request.headers.get("Authorization")

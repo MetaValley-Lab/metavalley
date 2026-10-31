@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from supabase_auth import User
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.api.dependencies import get_current_user
 from app.core.supabase import get_supabase_client
@@ -30,7 +30,7 @@ async def create_canvas_zone(
     request: Request,
     payload: CanvasZoneCreate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
@@ -62,7 +62,7 @@ async def get_startup_canvas_zones(
     request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
@@ -89,7 +89,7 @@ async def get_canvas_zone(
     request: Request,
     zone_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     canvas_zone_service = CanvasZoneService(supabase_client)
     zone = await canvas_zone_service.get_zone_by_id(
@@ -115,7 +115,7 @@ async def update_canvas_zone(
     zone_id: UUID,
     payload: CanvasZoneUpdate,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     canvas_zone_service = CanvasZoneService(supabase_client)
     updated = await canvas_zone_service.update_zone(
@@ -141,7 +141,7 @@ async def delete_canvas_zone(
     request: Request,
     zone_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     canvas_zone_service = CanvasZoneService(supabase_client)
     deleted = await canvas_zone_service.delete_zone(

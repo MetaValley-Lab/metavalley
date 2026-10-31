@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, cast
-from supabase.client import Client
+from supabase import AsyncClient
 
 from app.core.supabase import get_supabase_client
 from app.schemas.simulation_interest_schema import SimulationInterestCreate
@@ -8,7 +8,7 @@ from app.services.startup_service import StartupService
 
 class SimulationInterestService:
     
-    def __init__(self, supabase_client: Client):
+    def __init__(self, supabase_client: AsyncClient):
         self.supabase = supabase_client
         self.startup_service = StartupService(supabase_client=self.supabase)
 
@@ -44,7 +44,7 @@ class SimulationInterestService:
             "email": email,
         }
 
-        response = (
+        response = await (
             self.supabase
             .table("simulation_interests")
             .insert(data)
@@ -71,7 +71,7 @@ class SimulationInterestService:
         if not startup:
             return []
 
-        response = (
+        response = await (
             self.supabase
             .table("simulation_interests")
             .select("*")
@@ -87,7 +87,7 @@ class SimulationInterestService:
         user_id: str,
         startup_id: str
     ) -> Optional[Dict[str, Any]]:
-        response = (
+        response = await (
             self.supabase
             .table("simulation_interests")
             .select("*")
@@ -121,7 +121,7 @@ class SimulationInterestService:
         interest_id: str,
         user_id: str
     ) -> bool:
-        response = (
+        response = await (
             self.supabase
             .table("simulation_interests")
             .delete()

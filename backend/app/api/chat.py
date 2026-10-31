@@ -1,7 +1,7 @@
 import json
 from typing import List
 from uuid import UUID
-from supabase.client import Client
+from supabase import AsyncClient
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
@@ -32,7 +32,7 @@ async def send_message(
     request: Request,
     payload: MessageRequest,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     """
     Envia uma mensagem e recebe as respostas dos agentes em streaming via SSE.
@@ -130,7 +130,7 @@ async def get_message_history(
     conversation_type: ConversationType,
     limit: int = Query(default=100, ge=1, le=500, description="Máximo de mensagens retornadas"),
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     """
     Retorna as mensagens de uma conversa específica em ordem cronológica.
@@ -174,7 +174,7 @@ async def get_conversations(
     request: Request,
     startup_id: UUID,
     current_user: User = Depends(get_current_user),
-    supabase_client: Client = Depends(get_supabase_client)
+    supabase_client: AsyncClient = Depends(get_supabase_client)
 ):
     """
     Lista todas as conversas que já existem para a startup.
